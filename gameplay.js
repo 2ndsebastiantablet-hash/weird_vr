@@ -6,14 +6,15 @@ const MATCH_START_DELAY_MS = 1400;
 const MENU_TOGGLE_BUTTONS = new Set([3,4,5]);
 
 const MAPS = Object.freeze({
-  complex: {
-    id: "complex",
-    name: "Black Checkered Complex",
-    rootId: "match-map-complex",
-    spawn: [100, 0, 4],
+  forest: {
+    id: "forest",
+    name: "Evergreen Outpost",
+    rootId: "match-map-forest",
+    spawn: [100,0,10],
     monsterSpawns: [
-      [82,0,-18],[100,0,-20],[118,0,-16],[80,0,5],[120,0,7],[100,0,24],
-      [88,0,12],[112,0,14],[76,0,-2],[124,0,-4],[90,0,-28],[110,0,28]
+      [65,0,-28],[82,0,-35],[100,0,-40],[125,0,-34],[138,0,-16],[140,0,10],
+      [132,0,32],[108,0,38],[82,0,36],[62,0,26],[58,0,2],[72,0,-2],
+      [118,0,18],[88,0,16]
     ]
   }
 });
@@ -32,33 +33,18 @@ function shuffled(values){
   return copy;
 }
 
-function createMapSeed(){
-  const random = new Uint32Array(1);
-  crypto.getRandomValues(random);
-  return random[0].toString(16).padStart(8,"0");
-}
-
-function inspectComplex(seed){
-  const generator=window.WEIRD_VR_COMPLEX;
-  if(!generator||typeof generator.inspect!=="function")return null;
-  try{return generator.inspect(seed)}catch(error){
-    console.error("[WEIRD VR] Procedural complex inspection failed",error);
+function ensureForest(){
+  const forest=window.WEIRD_VR_FOREST;
+  if(!forest||typeof forest.ensureBuilt!=="function")return null;
+  try{return forest.ensureBuilt()}catch(error){
+    console.error("[WEIRD VR] Forest construction failed",error);
     return null;
   }
 }
 
-function generateComplex(seed){
-  const generator=window.WEIRD_VR_COMPLEX;
-  if(!generator||typeof generator.generate!=="function")return null;
-  try{return generator.generate(seed)}catch(error){
-    console.error("[WEIRD VR] Procedural complex generation failed",error);
-    return null;
-  }
-}
-
-function clearComplex(){
-  const generator=window.WEIRD_VR_COMPLEX;
-  if(generator&&typeof generator.clear==="function")generator.clear();
+function refreshForestCollisions(){
+  const forest=window.WEIRD_VR_FOREST;
+  if(forest&&typeof forest.refreshCollisions==="function")forest.refreshCollisions();
 }
 
 function formatTime(ms){
@@ -118,7 +104,7 @@ class WeirdVRGameLoop{
   }
 
   emptyState(){
-    return {active:false,mapId:"",mapSeed:"",startAt:0,endAt:0,participantIds:[],monsterIds:[],monsterSpawns:[]};
+    return {active:false,mapId:"",mapVersion:"",startAt:0,endAt:0,participantIds:[],monsterIds:[],monsterSpawns:[]};
   }
 
   start(){
@@ -171,21 +157,17 @@ class WeirdVRGameLoop{
 
   hostStartMatch(){
     if(!this.network.isHost||!this.network.roomCode||this.state.active)return;
-    const mapId="complex";
-    const mapSeed=createMapSeed();
-    // Inspect the deterministic layout without building hundreds of hidden A-Frame entities.
-    const generated=inspectComplex(mapSeed);
-    const generatedSpawns=generated&&Array.isArray(generated.monsterSpawns)?generated.monsterSpawns:[];
-    const availableSpawns=generatedSpawns.length>=6?generatedSpawns:MAPS[mapId].monsterSpawns;
+    const mapId="forest";
+    const map=MAPS[mapId];
     const participants=this.network.currentParticipantIds();
     const monsterPool=Array.isArray(window.WEIRD_VR_MONSTER_POOL)?window.WEIRD_VR_MONSTER_POOL:[];
     const monsters=shuffled(monsterPool).slice(0,6).map(item=>typeof item==="string"?item:item.id).filter(Boolean);
-    const spawnPool=shuffled(availableSpawns).slice(0,6);
+    const spawnPool=shuffled(map.monsterSpawns).slice(0,6);
     const startAt=Date.now()+MATCH_START_DELAY_MS;
     const state={
       active:true,
       mapId,
-      mapSeed,
+      mapVersion:"evergreen-outpost-v1",
       startAt,
       endAt:startAt+MATCH_DURATION_MS,
       participantIds:participants,
@@ -217,7 +199,7 @@ class WeirdVRGameLoop{
     this.state={
       active:true,
       mapId:map.id,
-      mapSeed:String(raw.mapSeed||"00000000"),
+      mapVersion:String(raw.mapVersion||"evergreen-outpost-v1"),
       startAt:Number(raw.startAt)||Date.now(),
       endAt:Number(raw.endAt)||Date.now()+MATCH_DURATION_MS,
       participantIds:participants,
@@ -226,14 +208,15 @@ class WeirdVRGameLoop{
     };
     this.localParticipant=participants.includes(this.network.peerId);
     if(this.localParticipant){
-      const generated=generateComplex(this.state.mapSeed);
-      if(!generated){
-        this.network.activeStatus("Map generation failed. Returning to waiting room.","error");
-        this.applyMatchEnd("Map generation failed");
+      const forest=ensureForest();
+      if(!forest){
+        this.network.activeStatus("Forest map failed to build. Returning to the waiting room.","error");
+        this.applyMatchEnd("Map construction failed");
         return;
       }
       this.showMap(map.id);
       this.teleport(map.spawn);
+      refreshForestCollisions();
       this.waitingText.setAttribute("visible",false);
       this.mapText.setAttribute("value",map.name.toUpperCase());
       this.timerText.setAttribute("visible",true);
@@ -260,7 +243,6 @@ class WeirdVRGameLoop{
     this.mapText.setAttribute("visible",false);
     this.waitingText.setAttribute("visible",false);
     this.setMenu(false);
-    clearComplex();
     this.updateMenu();
   }
 
@@ -273,7 +255,6 @@ class WeirdVRGameLoop{
     if(this.mapText)this.mapText.setAttribute("visible",false);
     if(this.waitingText)this.waitingText.setAttribute("visible",false);
     if(this.menu)this.setMenu(false);
-    clearComplex();
   }
 
   showLobby(){
