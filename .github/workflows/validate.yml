@@ -28,14 +28,18 @@ jobs:
         run: |
           test "$(git hash-object gorilla-locomotion-web.js)" = "94974d406cc880f5741f3e15e94dca2ee923947b"
 
-      - name: Verify uploaded GLB maps
+      - name: Verify shape-built maps
         run: |
-          test -s assets/maps/street_city_buildings_8.glb
-          test -s assets/maps/mansion_furnished_quest.glb
-          test -s assets/maps/pine_forest.glb
-          test "$(head -c 4 assets/maps/street_city_buildings_8.glb)" = "glTF"
-          test "$(head -c 4 assets/maps/mansion_furnished_quest.glb)" = "glTF"
-          test "$(head -c 4 assets/maps/pine_forest.glb)" = "glTF"
+          grep -q 'function buildStreet' map-loader.js
+          grep -q 'function buildMansion' map-loader.js
+          grep -q 'function buildForest' map-loader.js
+          grep -q 'light-flicker' map-loader.js
+          grep -q 'Neon Crossroads' gameplay.js
+          grep -q 'Blackwood Manor' gameplay.js
+          grep -q 'Moonpine Forest' gameplay.js
+          grep -q 'locomotion-collider' map-loader.js
+          ! grep -q 'gltf-model' index.html
+          ! grep -q 'assets/maps/' index.html
 
       - name: Check required static files and scene wiring
         run: |
@@ -46,20 +50,14 @@ jobs:
           grep -q 'gorilla-locomotion-web.js' index.html
           grep -q 'map-loader.js' index.html
           grep -q 'gameplay.js' index.html
-          grep -q 'assets/maps/street_city_buildings_8.glb' index.html
-          grep -q 'assets/maps/mansion_furnished_quest.glb' index.html
-          grep -q 'assets/maps/pine_forest.glb' index.html
-          grep -q 'quest-map-model="fallback:#street-fallback' index.html
-          grep -q 'quest-map-model="fallback:#mansion-fallback' index.html
-          grep -q 'quest-map-model="fallback:#forest-fallback' index.html
           grep -q 'gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera' index.html
           grep -q 'tracked-controls="hand:left"' index.html
           grep -q 'tracked-controls="hand:right"' index.html
           grep -q 'id="vr-game-menu"' index.html
           grep -q 'id="vr-start-match"' index.html
-          grep -q 'match-map-street' index.html
-          grep -q 'match-map-mansion' index.html
-          grep -q 'match-map-forest' index.html
+          grep -q 'id="match-map-street"' index.html
+          grep -q 'id="match-map-mansion"' index.html
+          grep -q 'id="match-map-forest"' index.html
           grep -q 'MATCH_DURATION_MS = 4 \* 60 \* 1000' gameplay.js
           grep -q 'slice(0,6)' gameplay.js
           grep -q 'matchState:this.game.exportState()' multiplayer.js
