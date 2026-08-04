@@ -10,7 +10,7 @@ const MAPS = Object.freeze({
     id: "complex",
     name: "Black Checkered Complex",
     rootId: "match-map-complex",
-    spawn: [100, 0, 8],
+    spawn: [100, 0, 4],
     monsterSpawns: [
       [82,0,-18],[100,0,-20],[118,0,-16],[80,0,5],[120,0,7],[100,0,24],
       [88,0,12],[112,0,14],[76,0,-2],[124,0,-4],[90,0,-28],[110,0,28]
@@ -36,6 +36,15 @@ function createMapSeed(){
   const random = new Uint32Array(1);
   crypto.getRandomValues(random);
   return random[0].toString(16).padStart(8,"0");
+}
+
+function generateComplex(seed){
+  const generator=window.WEIRD_VR_COMPLEX;
+  if(!generator||typeof generator.generate!=="function")return null;
+  try{return generator.generate(seed)}catch(error){
+    console.error("[WEIRD VR] Procedural complex generation failed",error);
+    return null;
+  }
 }
 
 function formatTime(ms){
@@ -107,9 +116,7 @@ class WeirdVRGameLoop{
     this.updateMenu();
   }
 
-  setRoomRole(){
-    this.updateMenu();
-  }
+  setRoomRole(){this.updateMenu()}
 
   toggleMenu(){
     if(!this.network.roomCode)return;
@@ -151,15 +158,19 @@ class WeirdVRGameLoop{
   hostStartMatch(){
     if(!this.network.isHost||!this.network.roomCode||this.state.active)return;
     const mapId="complex";
+    const mapSeed=createMapSeed();
+    const generated=generateComplex(mapSeed);
+    const generatedSpawns=generated&&Array.isArray(generated.monsterSpawns)?generated.monsterSpawns:[];
+    const availableSpawns=generatedSpawns.length>=6?generatedSpawns:MAPS[mapId].monsterSpawns;
     const participants=this.network.currentParticipantIds();
     const monsterPool=Array.isArray(window.WEIRD_VR_MONSTER_POOL)?window.WEIRD_VR_MONSTER_POOL:[];
     const monsters=shuffled(monsterPool).slice(0,6).map(item=>typeof item==="string"?item:item.id).filter(Boolean);
-    const spawnPool=shuffled(MAPS[mapId].monsterSpawns).slice(0,6);
+    const spawnPool=shuffled(availableSpawns).slice(0,6);
     const startAt=Date.now()+MATCH_START_DELAY_MS;
     const state={
       active:true,
       mapId,
-      mapSeed:createMapSeed(),
+      mapSeed,
       startAt,
       endAt:startAt+MATCH_DURATION_MS,
       participantIds:participants,
@@ -170,9 +181,7 @@ class WeirdVRGameLoop{
     this.applyMatchStart(state);
   }
 
-  exportState(){
-    return JSON.parse(JSON.stringify(this.state));
-  }
+  exportState(){return JSON.parse(JSON.stringify(this.state))}
 
   applyWelcome(state){
     if(state&&state.active)this.applyMatchStart(state);
@@ -202,9 +211,7 @@ class WeirdVRGameLoop{
     };
     this.localParticipant=participants.includes(this.network.peerId);
     if(this.localParticipant){
-      if(window.WEIRD_VR_COMPLEX&&typeof window.WEIRD_VR_COMPLEX.generate==="function"){
-        window.WEIRD_VR_COMPLEX.generate(this.state.mapSeed);
-      }
+      generateComplex(this.state.mapSeed);
       this.showMap(map.id);
       this.teleport(map.spawn);
       this.waitingText.setAttribute("visible",false);
