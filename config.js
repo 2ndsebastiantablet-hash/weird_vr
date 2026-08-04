@@ -1,0 +1,18 @@
+window.WEIRD_VR_CONFIG=Object.freeze({
+  roomCodeLength:6,
+  maxPlayers:8,
+  publicPrefix:"weird-vr-public-",
+  privatePrefix:"weird-vr-private-",
+  poseSendIntervalMs:50,
+  joinAttemptTimeoutMs:2600,
+  directoryRefreshMs:8000,
+  peerOptions:{
+    debug:1,
+    config:{
+      iceServers:[
+        {urls:"stun:stun.l.google.com:19302"},
+        {urls:"stun:stun1.l.google.com:19302"}
+      ]
+    }
+  }
+});
