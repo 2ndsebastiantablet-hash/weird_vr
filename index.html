@@ -10,6 +10,7 @@
   <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <script defer src="config.js"></script>
   <script defer src="gorilla-locomotion-web.js"></script>
+  <script defer src="map-loader.js"></script>
   <script defer src="gameplay.js"></script>
   <script defer src="multiplayer.js"></script>
   <script defer src="app.js"></script>
@@ -80,7 +81,7 @@
     webxr="referenceSpaceType:local-floor;optionalFeatures:dom-overlay;overlayElement:#app-ui"
     vr-mode-ui="enabled:true">
     <a-entity light="type:hemisphere;color:#ffffff;groundColor:#59616f;intensity:1.75"></a-entity>
-    <a-entity light="type:directional;color:#fff;intensity:1.45;castShadow:false" position="5 10 4"></a-entity>
+    <a-entity light="type:directional;color:#ffffff;intensity:1.45;castShadow:false" position="5 10 4"></a-entity>
     <a-entity light="type:point;color:#8b5cf6;intensity:2.1;distance:18" position="0 5 -7"></a-entity>
     <a-sky color="#080a15"></a-sky>
 
@@ -100,20 +101,30 @@
       <a-cylinder position="-10 2 -10" radius="1.1" height="4" color="#3b8b62" locomotion-collider="type:box;size:2.2 4 2.2"></a-cylinder>
       <a-cylinder position="10 2 -11" radius="1.1" height="4" color="#8b3b62" locomotion-collider="type:box;size:2.2 4 2.2"></a-cylinder>
       <a-torus position="0 3.7 -12" radius="2" radius-tubular=".12" color="#8b5cf6" animation="property:rotation;to:0 360 0;loop:true;dur:9000;easing:linear"></a-torus>
-      <a-text value="WEIRD VR" align="center" width="8" color="#fff" position="0 3.7 -16.64"></a-text>
+      <a-text value="WEIRD VR" align="center" width="8" color="#ffffff" position="0 3.7 -16.64"></a-text>
       <a-text id="world-room-status" value="SOLO" align="center" width="4" color="#9fb2ff" position="0 3.05 -16.62"></a-text>
     </a-entity>
 
     <a-entity id="match-map-street" position="100 0 0" visible="false">
-      <a-plane rotation="-90 0 0" width="42" height="42" color="#49515f" locomotion-collider="type:floor;size:42 0 42"></a-plane>
-      <a-plane rotation="-90 0 0" width="7" height="42" color="#242832" position="0 .01 0"></a-plane>
-      <a-plane rotation="-90 0 90" width="7" height="42" color="#242832" position="0 .012 0"></a-plane>
-      <a-box position="-9 3 -10" width="8" height="6" depth="8" color="#9a6651" locomotion-collider="type:box;size:8 6 8"></a-box>
-      <a-box position="9 4 -10" width="8" height="8" depth="8" color="#66799b" locomotion-collider="type:box;size:8 8 8"></a-box>
-      <a-box position="-10 4 10" width="7" height="8" depth="8" color="#6e8b72" locomotion-collider="type:box;size:7 8 8"></a-box>
-      <a-box position="10 3 10" width="8" height="6" depth="7" color="#a58b62" locomotion-collider="type:box;size:8 6 7"></a-box>
-      <a-box position="-15 2 0" width="5" height="4" depth="7" color="#765a84" locomotion-collider="type:box;size:5 4 7"></a-box>
-      <a-box position="15 2 0" width="5" height="4" depth="7" color="#7f6b55" locomotion-collider="type:box;size:5 4 7"></a-box>
+      <a-entity id="street-real-model" gltf-model="url(assets/maps/street_city_buildings_8.glb)" quest-map-model="fallback:#street-fallback;name:Street City"></a-entity>
+      <a-entity id="street-fallback">
+        <a-plane rotation="-90 0 0" width="42" height="42" color="#49515f"></a-plane>
+        <a-plane rotation="-90 0 0" width="7" height="42" color="#242832" position="0 .01 0"></a-plane>
+        <a-plane rotation="-90 0 90" width="7" height="42" color="#242832" position="0 .012 0"></a-plane>
+        <a-box position="-9 3 -10" width="8" height="6" depth="8" color="#9a6651"></a-box>
+        <a-box position="9 4 -10" width="8" height="8" depth="8" color="#66799b"></a-box>
+        <a-box position="-10 4 10" width="7" height="8" depth="8" color="#6e8b72"></a-box>
+        <a-box position="10 3 10" width="8" height="6" depth="7" color="#a58b62"></a-box>
+        <a-box position="-15 2 0" width="5" height="4" depth="7" color="#765a84"></a-box>
+        <a-box position="15 2 0" width="5" height="4" depth="7" color="#7f6b55"></a-box>
+      </a-entity>
+      <a-plane rotation="-90 0 0" width="42" height="42" visible="false" locomotion-collider="type:floor;size:42 0 42"></a-plane>
+      <a-box position="-9 3 -10" width="8" height="6" depth="8" visible="false" locomotion-collider="type:box;size:8 6 8"></a-box>
+      <a-box position="9 4 -10" width="8" height="8" depth="8" visible="false" locomotion-collider="type:box;size:8 8 8"></a-box>
+      <a-box position="-10 4 10" width="7" height="8" depth="8" visible="false" locomotion-collider="type:box;size:7 8 8"></a-box>
+      <a-box position="10 3 10" width="8" height="6" depth="7" visible="false" locomotion-collider="type:box;size:8 6 7"></a-box>
+      <a-box position="-15 2 0" width="5" height="4" depth="7" visible="false" locomotion-collider="type:box;size:5 4 7"></a-box>
+      <a-box position="15 2 0" width="5" height="4" depth="7" visible="false" locomotion-collider="type:box;size:5 4 7"></a-box>
       <a-box position="0 2 -21" width="42" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:42 4 .5"></a-box>
       <a-box position="0 2 21" width="42" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:42 4 .5"></a-box>
       <a-box position="-21 2 0" width=".5" height="4" depth="42" visible="false" locomotion-collider="type:box;size:.5 4 42"></a-box>
@@ -121,15 +132,27 @@
     </a-entity>
 
     <a-entity id="match-map-mansion" position="220 0 0" visible="false">
-      <a-plane rotation="-90 0 0" width="42" height="42" color="#735d48" locomotion-collider="type:floor;size:42 0 42"></a-plane>
-      <a-box position="0 1.6 -15" width="30" height="3.2" depth=".5" color="#d7cfbf" locomotion-collider="type:box;size:30 3.2 .5"></a-box>
-      <a-box position="-15 1.6 0" width=".5" height="3.2" depth="30" color="#d7cfbf" locomotion-collider="type:box;size:.5 3.2 30"></a-box>
-      <a-box position="15 1.6 0" width=".5" height="3.2" depth="30" color="#d7cfbf" locomotion-collider="type:box;size:.5 3.2 30"></a-box>
-      <a-box position="-7 1.6 -4" width=".35" height="3.2" depth="18" color="#c5b9a7" locomotion-collider="type:box;size:.35 3.2 18"></a-box>
-      <a-box position="7 1.6 4" width=".35" height="3.2" depth="18" color="#c5b9a7" locomotion-collider="type:box;size:.35 3.2 18"></a-box>
-      <a-box position="0 .45 -7" width="4" height=".9" depth="2" color="#694b3d" locomotion-collider="type:box;size:4 .9 2"></a-box>
-      <a-box position="-10 .5 7" width="3" height="1" depth="2" color="#775460" locomotion-collider="type:box;size:3 1 2"></a-box>
-      <a-box position="10 .5 -4" width="3.5" height="1" depth="2" color="#56697b" locomotion-collider="type:box;size:3.5 1 2"></a-box>
+      <a-entity id="mansion-real-model" gltf-model="url(assets/maps/mansion_furnished_quest.glb)" quest-map-model="fallback:#mansion-fallback;name:Furnished Mansion"></a-entity>
+      <a-entity id="mansion-fallback">
+        <a-plane rotation="-90 0 0" width="42" height="42" color="#735d48"></a-plane>
+        <a-box position="0 1.6 -15" width="30" height="3.2" depth=".5" color="#d7cfbf"></a-box>
+        <a-box position="-15 1.6 0" width=".5" height="3.2" depth="30" color="#d7cfbf"></a-box>
+        <a-box position="15 1.6 0" width=".5" height="3.2" depth="30" color="#d7cfbf"></a-box>
+        <a-box position="-7 1.6 -4" width=".35" height="3.2" depth="18" color="#c5b9a7"></a-box>
+        <a-box position="7 1.6 4" width=".35" height="3.2" depth="18" color="#c5b9a7"></a-box>
+        <a-box position="0 .45 -7" width="4" height=".9" depth="2" color="#694b3d"></a-box>
+        <a-box position="-10 .5 7" width="3" height="1" depth="2" color="#775460"></a-box>
+        <a-box position="10 .5 -4" width="3.5" height="1" depth="2" color="#56697b"></a-box>
+      </a-entity>
+      <a-plane rotation="-90 0 0" width="42" height="42" visible="false" locomotion-collider="type:floor;size:42 0 42"></a-plane>
+      <a-box position="0 1.6 -15" width="30" height="3.2" depth=".5" visible="false" locomotion-collider="type:box;size:30 3.2 .5"></a-box>
+      <a-box position="-15 1.6 0" width=".5" height="3.2" depth="30" visible="false" locomotion-collider="type:box;size:.5 3.2 30"></a-box>
+      <a-box position="15 1.6 0" width=".5" height="3.2" depth="30" visible="false" locomotion-collider="type:box;size:.5 3.2 30"></a-box>
+      <a-box position="-7 1.6 -4" width=".35" height="3.2" depth="18" visible="false" locomotion-collider="type:box;size:.35 3.2 18"></a-box>
+      <a-box position="7 1.6 4" width=".35" height="3.2" depth="18" visible="false" locomotion-collider="type:box;size:.35 3.2 18"></a-box>
+      <a-box position="0 .45 -7" width="4" height=".9" depth="2" visible="false" locomotion-collider="type:box;size:4 .9 2"></a-box>
+      <a-box position="-10 .5 7" width="3" height="1" depth="2" visible="false" locomotion-collider="type:box;size:3 1 2"></a-box>
+      <a-box position="10 .5 -4" width="3.5" height="1" depth="2" visible="false" locomotion-collider="type:box;size:3.5 1 2"></a-box>
       <a-box position="0 2 -21" width="42" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:42 4 .5"></a-box>
       <a-box position="0 2 21" width="42" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:42 4 .5"></a-box>
       <a-box position="-21 2 0" width=".5" height="4" depth="42" visible="false" locomotion-collider="type:box;size:.5 4 42"></a-box>
@@ -137,16 +160,28 @@
     </a-entity>
 
     <a-entity id="match-map-forest" position="340 0 0" visible="false">
-      <a-plane rotation="-90 0 0" width="48" height="48" color="#355b39" locomotion-collider="type:floor;size:48 0 48"></a-plane>
-      <a-circle rotation="-90 0 0" radius="5" color="#6d5c44" position="0 .015 8"></a-circle>
-      <a-entity position="-10 0 -8"><a-cylinder radius=".35" height="5" position="0 2.5 0" color="#6b452a" locomotion-collider="type:box;size:.7 5 .7"></a-cylinder><a-cone radius-bottom="2" radius-top="0" height="5" position="0 6 0" color="#1f6b36"></a-cone></a-entity>
-      <a-entity position="8 0 -10"><a-cylinder radius=".4" height="6" position="0 3 0" color="#6b452a" locomotion-collider="type:box;size:.8 6 .8"></a-cylinder><a-cone radius-bottom="2.4" radius-top="0" height="6" position="0 7 0" color="#246f3b"></a-cone></a-entity>
-      <a-entity position="-15 0 5"><a-cylinder radius=".35" height="5" position="0 2.5 0" color="#6b452a" locomotion-collider="type:box;size:.7 5 .7"></a-cylinder><a-cone radius-bottom="2" radius-top="0" height="5" position="0 6 0" color="#1d6232"></a-cone></a-entity>
-      <a-entity position="14 0 7"><a-cylinder radius=".4" height="6" position="0 3 0" color="#6b452a" locomotion-collider="type:box;size:.8 6 .8"></a-cylinder><a-cone radius-bottom="2.3" radius-top="0" height="6" position="0 7 0" color="#2a7740"></a-cone></a-entity>
-      <a-entity position="-5 0 14"><a-cylinder radius=".3" height="4.5" position="0 2.25 0" color="#6b452a" locomotion-collider="type:box;size:.6 4.5 .6"></a-cylinder><a-cone radius-bottom="1.8" radius-top="0" height="4.5" position="0 5.5 0" color="#225f34"></a-cone></a-entity>
-      <a-entity position="5 0 16"><a-cylinder radius=".3" height="4.5" position="0 2.25 0" color="#6b452a" locomotion-collider="type:box;size:.6 4.5 .6"></a-cylinder><a-cone radius-bottom="1.8" radius-top="0" height="4.5" position="0 5.5 0" color="#276e39"></a-cone></a-entity>
-      <a-entity position="-18 0 -12"><a-cylinder radius=".4" height="6" position="0 3 0" color="#6b452a" locomotion-collider="type:box;size:.8 6 .8"></a-cylinder><a-cone radius-bottom="2.4" radius-top="0" height="6" position="0 7 0" color="#1c5f31"></a-cone></a-entity>
-      <a-entity position="18 0 -14"><a-cylinder radius=".4" height="6" position="0 3 0" color="#6b452a" locomotion-collider="type:box;size:.8 6 .8"></a-cylinder><a-cone radius-bottom="2.4" radius-top="0" height="6" position="0 7 0" color="#28773f"></a-cone></a-entity>
+      <a-entity id="forest-real-model" gltf-model="url(assets/maps/pine_forest.glb)" quest-map-model="fallback:#forest-fallback;name:Pine Forest"></a-entity>
+      <a-entity id="forest-fallback">
+        <a-plane rotation="-90 0 0" width="48" height="48" color="#355b39"></a-plane>
+        <a-circle rotation="-90 0 0" radius="5" color="#6d5c44" position="0 .015 8"></a-circle>
+        <a-entity position="-10 0 -8"><a-cylinder radius=".35" height="5" position="0 2.5 0" color="#6b452a"></a-cylinder><a-cone radius-bottom="2" radius-top="0" height="5" position="0 6 0" color="#1f6b36"></a-cone></a-entity>
+        <a-entity position="8 0 -10"><a-cylinder radius=".4" height="6" position="0 3 0" color="#6b452a"></a-cylinder><a-cone radius-bottom="2.4" radius-top="0" height="6" position="0 7 0" color="#246f3b"></a-cone></a-entity>
+        <a-entity position="-15 0 5"><a-cylinder radius=".35" height="5" position="0 2.5 0" color="#6b452a"></a-cylinder><a-cone radius-bottom="2" radius-top="0" height="5" position="0 6 0" color="#1d6232"></a-cone></a-entity>
+        <a-entity position="14 0 7"><a-cylinder radius=".4" height="6" position="0 3 0" color="#6b452a"></a-cylinder><a-cone radius-bottom="2.3" radius-top="0" height="6" position="0 7 0" color="#2a7740"></a-cone></a-entity>
+        <a-entity position="-5 0 14"><a-cylinder radius=".3" height="4.5" position="0 2.25 0" color="#6b452a"></a-cylinder><a-cone radius-bottom="1.8" radius-top="0" height="4.5" position="0 5.5 0" color="#225f34"></a-cone></a-entity>
+        <a-entity position="5 0 16"><a-cylinder radius=".3" height="4.5" position="0 2.25 0" color="#6b452a"></a-cylinder><a-cone radius-bottom="1.8" radius-top="0" height="4.5" position="0 5.5 0" color="#276e39"></a-cone></a-entity>
+        <a-entity position="-18 0 -12"><a-cylinder radius=".4" height="6" position="0 3 0" color="#6b452a"></a-cylinder><a-cone radius-bottom="2.4" radius-top="0" height="6" position="0 7 0" color="#1c5f31"></a-cone></a-entity>
+        <a-entity position="18 0 -14"><a-cylinder radius=".4" height="6" position="0 3 0" color="#6b452a"></a-cylinder><a-cone radius-bottom="2.4" radius-top="0" height="6" position="0 7 0" color="#28773f"></a-cone></a-entity>
+      </a-entity>
+      <a-plane rotation="-90 0 0" width="48" height="48" visible="false" locomotion-collider="type:floor;size:48 0 48"></a-plane>
+      <a-box position="-10 3 -8" width=".7" height="6" depth=".7" visible="false" locomotion-collider="type:box;size:.7 6 .7"></a-box>
+      <a-box position="8 3 -10" width=".8" height="6" depth=".8" visible="false" locomotion-collider="type:box;size:.8 6 .8"></a-box>
+      <a-box position="-15 3 5" width=".7" height="6" depth=".7" visible="false" locomotion-collider="type:box;size:.7 6 .7"></a-box>
+      <a-box position="14 3 7" width=".8" height="6" depth=".8" visible="false" locomotion-collider="type:box;size:.8 6 .8"></a-box>
+      <a-box position="-5 2.5 14" width=".6" height="5" depth=".6" visible="false" locomotion-collider="type:box;size:.6 5 .6"></a-box>
+      <a-box position="5 2.5 16" width=".6" height="5" depth=".6" visible="false" locomotion-collider="type:box;size:.6 5 .6"></a-box>
+      <a-box position="-18 3 -12" width=".8" height="6" depth=".8" visible="false" locomotion-collider="type:box;size:.8 6 .8"></a-box>
+      <a-box position="18 3 -14" width=".8" height="6" depth=".8" visible="false" locomotion-collider="type:box;size:.8 6 .8"></a-box>
       <a-box position="0 2 -24" width="48" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:48 4 .5"></a-box>
       <a-box position="0 2 24" width="48" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:48 4 .5"></a-box>
       <a-box position="-24 2 0" width=".5" height="4" depth="48" visible="false" locomotion-collider="type:box;size:.5 4 48"></a-box>
