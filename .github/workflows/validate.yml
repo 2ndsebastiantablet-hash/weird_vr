@@ -28,6 +28,42 @@ jobs:
         run: |
           test "$(git hash-object gorilla-locomotion-web.js)" = "94974d406cc880f5741f3e15e94dca2ee923947b"
 
+      - name: Verify first modular piece batch
+        run: |
+          grep -q 'id: "spawnHub"' procedural-complex.js
+          grep -q 'id: "shortStraight"' procedural-complex.js
+          grep -q 'id: "mediumStraight"' procedural-complex.js
+          grep -q 'id: "longStraight"' procedural-complex.js
+          grep -q 'id: "cornerHall"' procedural-complex.js
+          grep -q 'id: "tJunction"' procedural-complex.js
+          grep -q 'id: "fourWay"' procedural-complex.js
+          grep -q 'id: "smallRoom"' procedural-complex.js
+          grep -q 'id: "pillarRoom"' procedural-complex.js
+          grep -q 'id: "steppingRoom"' procedural-complex.js
+          grep -q 'id: "rampUp"' procedural-complex.js
+          grep -q 'id: "wallCap"' procedural-complex.js
+          grep -q 'CEILING_THICKNESS' procedural-complex.js
+          grep -q 'function addFloorAndCeiling' procedural-complex.js
+          grep -q 'height + 0.35' procedural-complex.js
+          grep -q 'refreshLocomotionColliders' procedural-complex.js
+
+      - name: Verify deterministic procedural layouts
+        run: |
+          node <<'NODE'
+          global.window = {};
+          global.document = {readyState: "loading", addEventListener() {}};
+          require("./procedural-complex.js");
+          const api = window.WEIRD_VR_COMPLEX;
+          const first = api.inspect("deadbeef");
+          const second = api.inspect("deadbeef");
+          if (JSON.stringify(first) !== JSON.stringify(second)) throw new Error("Seed output changed between generations");
+          if (!first.pieceIds.includes("spawnHub")) throw new Error("Spawn Hub missing");
+          if (!first.pieceIds.includes("rampUp")) throw new Error("Ramp Up missing");
+          if (!first.pieceIds.includes("wallCap")) throw new Error("Wall Cap missing");
+          if (first.pieceCount < 24 || first.pieceCount > 44) throw new Error("Unexpected map size: " + first.pieceCount);
+          if (first.monsterSpawns.length < 6) throw new Error("Not enough generated monster spawns");
+          NODE
+
       - name: Check procedural map foundation
         run: |
           test -f index.html
@@ -40,8 +76,9 @@ jobs:
           grep -q 'gameplay.js' index.html
           grep -q 'id="match-map-complex"' index.html
           grep -q 'Black Checkered Complex' gameplay.js
-          grep -q 'mapSeed:createMapSeed()' gameplay.js
-          grep -q 'WEIRD_VR_COMPLEX.generate' gameplay.js
+          grep -q 'const mapSeed=createMapSeed()' gameplay.js
+          grep -q 'generateComplex(mapSeed)' gameplay.js
+          grep -q 'generated.monsterSpawns' gameplay.js
           grep -q 'complex-checker-texture' procedural-complex.js
           grep -q 'GRID_UNIT = 6' procedural-complex.js
           grep -q 'locomotion-collider' procedural-complex.js
