@@ -20,7 +20,7 @@ jobs:
           node --check app.js
           node --check config.js
           node --check gorilla-locomotion-web.js
-          node --check map-loader.js
+          node --check procedural-complex.js
           node --check gameplay.js
           node --check multiplayer.js
 
@@ -28,39 +28,37 @@ jobs:
         run: |
           test "$(git hash-object gorilla-locomotion-web.js)" = "94974d406cc880f5741f3e15e94dca2ee923947b"
 
-      - name: Verify shape-built maps
-        run: |
-          grep -q 'function buildStreet' map-loader.js
-          grep -q 'function buildMansion' map-loader.js
-          grep -q 'function buildForest' map-loader.js
-          grep -q 'light-flicker' map-loader.js
-          grep -q 'Neon Crossroads' gameplay.js
-          grep -q 'Blackwood Manor' gameplay.js
-          grep -q 'Moonpine Forest' gameplay.js
-          grep -q 'locomotion-collider' map-loader.js
-          ! grep -q 'gltf-model' index.html
-          ! grep -q 'assets/maps/' index.html
-
-      - name: Check required static files and scene wiring
+      - name: Check procedural map foundation
         run: |
           test -f index.html
           test -f styles.css
           test -f README.md
+          test -f docs/PROCEDURAL_COMPLEX_PLAN.md
           test -f THIRD_PARTY_LICENSES/Another-Axiom-GorillaLocomotion-MIT.txt
           grep -q 'gorilla-locomotion-web.js' index.html
-          grep -q 'map-loader.js' index.html
+          grep -q 'procedural-complex.js' index.html
           grep -q 'gameplay.js' index.html
+          grep -q 'id="match-map-complex"' index.html
+          grep -q 'Black Checkered Complex' gameplay.js
+          grep -q 'mapSeed:createMapSeed()' gameplay.js
+          grep -q 'WEIRD_VR_COMPLEX.generate' gameplay.js
+          grep -q 'complex-checker-texture' procedural-complex.js
+          grep -q 'GRID_UNIT = 6' procedural-complex.js
+          grep -q 'locomotion-collider' procedural-complex.js
+          ! grep -q 'match-map-street' index.html
+          ! grep -q 'match-map-mansion' index.html
+          ! grep -q 'match-map-forest' index.html
+          ! grep -q 'gltf-model' index.html
+          ! grep -q 'assets/maps/' index.html
+
+      - name: Check gameplay and controller wiring
+        run: |
           grep -q 'gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera' index.html
           grep -q 'tracked-controls="hand:left"' index.html
           grep -q 'tracked-controls="hand:right"' index.html
           grep -q 'id="vr-game-menu"' index.html
           grep -q 'id="vr-start-match"' index.html
-          grep -q 'id="match-map-street"' index.html
-          grep -q 'id="match-map-mansion"' index.html
-          grep -q 'id="match-map-forest"' index.html
           grep -q 'MATCH_DURATION_MS = 4 \* 60 \* 1000' gameplay.js
           grep -q 'slice(0,6)' gameplay.js
           grep -q 'matchState:this.game.exportState()' multiplayer.js
-          grep -q 'locomotion-collider="type:floor' index.html
-          grep -q 'locomotion-collider="type:box' index.html
           grep -q 'create-room-dialog' index.html
