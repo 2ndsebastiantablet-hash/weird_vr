@@ -59,10 +59,14 @@ class WeirdVRMultiplayer{
   this.connections=new Map();this.profiles=new Map();this.avatars=new Map();this.pendingAttempt=null;this.missingCode="";
   this.lastPose=0;this.directoryTimer=0;this.frame=0;this.closing=false;this.rosterSize=1;
   this.tmp={p:new THREE.Vector3(),q:new THREE.Quaternion()};
+  this.game=null;
  }
  start(){
   if(!window.Peer){this.setMenuStatus("PeerJS failed to load. Check your internet connection.","error");return}
-  this.bindUI();const saved=localStorage.getItem("weird-vr-player-name");if(saved)this.nameInput.value=cleanName(saved);
+  if(!window.WeirdVRGameLoop){this.setMenuStatus("Gameplay system failed to load.","error");return}
+  this.bindUI();
+  this.game=new window.WeirdVRGameLoop(this);this.game.start();
+  const saved=localStorage.getItem("weird-vr-player-name");if(saved)this.nameInput.value=cleanName(saved);
   const match=location.hash.match(/room=([a-z0-9]{1,6})/i);if(match)this.codeInput.value=cleanCode(match[1]);
   this.scene.addEventListener("enter-vr",()=>document.body.classList.add("vr-active"));
   this.scene.addEventListener("exit-vr",()=>document.body.classList.remove("vr-active"));
@@ -99,9 +103,7 @@ class WeirdVRMultiplayer{
   this.peer.on("connection",conn=>this.acceptIncoming(conn));
   this.peer.on("disconnected",()=>{if(!this.closing)this.activeStatus("Signaling disconnected. Existing players may remain connected.","warning")});
  }
- destroyPeer(){
-  this.closing=true;if(this.peer){try{this.peer.destroy()}catch(_){}}this.peer=null;this.peerId="";this.pendingAttempt=null
- }
+ destroyPeer(){this.closing=true;if(this.peer){try{this.peer.destroy()}catch(_){}}this.peer=null;this.peerId="";this.pendingAttempt=null}
  hostId(code,visibility){return(visibility==="public"?C.publicPrefix:C.privatePrefix)+code}
  async hostRoom(code,visibility){
   code=cleanCode(code);if(code.length!==C.roomCodeLength)return;
@@ -109,8 +111,8 @@ class WeirdVRMultiplayer{
   this.roomCode=code;this.visibility=visibility;this.isHost=true;this.connections.clear();this.profiles.clear();this.destroyPeer();this.closing=false;
   this.peer=new Peer(this.hostId(code,visibility),this.peerOptions());this.bindPeerEvents();
   this.peer.on("open",id=>{
-   this.peerId=id;this.profiles.set(id,this.profile());this.showRoom();this.activeStatus("Room ready. Share "+code+" and enter VR.","ready");
-   history.replaceState(null,"","#room="+code);this.setControls(false)
+   this.peerId=id;this.profiles.set(id,this.profile());this.showRoom();this.activeStatus("Room ready. Open the controller menu to start a match.","ready");
+   history.replaceState(null,"","#room="+code);this.setControls(false);this.game.setRoomRole()
   })
  }
  async joinCode(raw,askToCreate){
@@ -119,21 +121,16 @@ class WeirdVRMultiplayer{
   if(!this.peer||this.peer.destroyed){this.openDiscoveryPeer();await new Promise(r=>setTimeout(r,700))}
   if(!this.peer||!this.peer.open){this.setMenuStatus("Multiplayer is still connecting. Try again in a moment.","warning");return}
   this.setControls(true);this.setMenuStatus("Looking for room "+code+"…","idle");
-  let result=await this.tryConnection(this.hostId(code,"public"));
-  let visibility="public";
+  let result=await this.tryConnection(this.hostId(code,"public"));let visibility="public";
   if(!result){result=await this.tryConnection(this.hostId(code,"private"));visibility="private"}
-  if(!result){
-   this.setControls(false);
-   if(askToCreate)this.showMissingDialog(code);else this.setMenuStatus("Room not found.","error");
-   return
-  }
+  if(!result){this.setControls(false);if(askToCreate)this.showMissingDialog(code);else this.setMenuStatus("Room not found.","error");return}
   this.roomCode=code;this.visibility=visibility;this.isHost=false;this.hostConnection=result;
   this.prepareClientConnection(result);this.setControls(false)
  }
  tryConnection(target){
   return new Promise(resolve=>{
    let settled=false;const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);this.pendingAttempt=null;resolve(value)};
-   const conn=this.peer.connect(target,{serialization:"json",reliable:true,metadata:{game:"weird-vr",version:1}});
+   const conn=this.peer.connect(target,{serialization:"json",reliable:true,metadata:{game:"weird-vr",version:2}});
    this.pendingAttempt=value=>finish(value?conn:false);
    const timer=setTimeout(()=>{try{conn.close()}catch(_){}finish(false)},C.joinAttemptTimeoutMs);
    conn.on("open",()=>finish(conn));conn.on("error",()=>finish(false));conn.on("close",()=>{if(!conn.open)finish(false)})
@@ -144,7 +141,7 @@ class WeirdVRMultiplayer{
   conn.on("data",data=>this.handleClientMessage(data));
   conn.on("close",()=>this.leaveRoom("The host closed the room."));
   conn.on("error",()=>this.leaveRoom("Connection to the host was lost."));
-  conn.send({type:"hello",profile:this.profile(),version:1})
+  conn.send({type:"hello",profile:this.profile(),version:2})
  }
  acceptIncoming(conn){
   if(!this.isHost){conn.on("open",()=>{conn.send({type:"reject",reason:"Not a room host"});setTimeout(()=>conn.close(),100)});return}
@@ -156,7 +153,11 @@ class WeirdVRMultiplayer{
   if(data.type==="hello"){
    const profile={name:cleanName(data.profile&&data.profile.name),color:/^#[0-9a-f]{6}$/i.test(data.profile&&data.profile.color||"")?data.profile.color:hashColor(peerId)};
    this.profiles.set(peerId,profile);this.ensureAvatar(peerId,profile);
-   const conn=this.connections.get(peerId);if(conn&&conn.open)conn.send({type:"welcome",roomCode:this.roomCode,visibility:this.visibility,maxPlayers:C.maxPlayers,roster:this.roster()});
+   const conn=this.connections.get(peerId);
+   if(conn&&conn.open)conn.send({
+    type:"welcome",roomCode:this.roomCode,visibility:this.visibility,maxPlayers:C.maxPlayers,
+    roster:this.roster(),matchState:this.game.exportState()
+   });
    this.broadcast({type:"player-joined",peerId,profile},peerId);this.updateCount();return
   }
   if(data.type==="pose"&&this.validPose(data.pose)){
@@ -166,11 +167,17 @@ class WeirdVRMultiplayer{
  }
  handleClientMessage(data){
   if(!data||typeof data.type!=="string")return;
+  if(this.game&&this.game.handleNetworkMessage(data))return;
   if(data.type==="reject"){this.leaveRoom(data.reason||"Room rejected the connection.");return}
   if(data.type==="welcome"){
    if(cleanCode(data.roomCode)!==this.roomCode)return;this.visibility=data.visibility==="public"?"public":"private";
-   this.profiles.clear();for(const item of Array.isArray(data.roster)?data.roster:[]){if(item.id!==this.peerId){this.profiles.set(item.id,item.profile);this.ensureAvatar(item.id,item.profile)}}
-   this.rosterSize=Math.max(1,(data.roster||[]).length);this.showRoom();this.activeStatus("Connected. Enter VR when ready.","ready");history.replaceState(null,"","#room="+this.roomCode);this.updateCount();return
+   this.profiles.clear();
+   for(const item of Array.isArray(data.roster)?data.roster:[]){if(item.id!==this.peerId){this.profiles.set(item.id,item.profile);this.ensureAvatar(item.id,item.profile)}}
+   this.rosterSize=Math.max(1,(data.roster||[]).length);this.showRoom();
+   this.game.applyWelcome(data.matchState);
+   const waiting=data.matchState&&data.matchState.active&&!data.matchState.participantIds.includes(this.peerId);
+   this.activeStatus(waiting?"Match in progress. You will join the next round.":"Connected. Open the controller menu in VR.","ready");
+   history.replaceState(null,"","#room="+this.roomCode);this.updateCount();return
   }
   if(data.type==="player-joined"){this.profiles.set(data.peerId,data.profile);this.ensureAvatar(data.peerId,data.profile);this.rosterSize++;this.updateCount();return}
   if(data.type==="player-left"){this.removeAvatar(data.peerId);this.profiles.delete(data.peerId);this.rosterSize=Math.max(1,this.rosterSize-1);this.updateCount();return}
@@ -182,9 +189,8 @@ class WeirdVRMultiplayer{
   this.broadcast({type:"player-left",peerId});this.updateCount()
  }
  roster(){return Array.from(this.profiles.entries()).map(([id,profile])=>({id,profile}))}
- broadcast(message,except){
-  for(const [id,conn] of this.connections)if(id!==except&&conn.open)try{conn.send(message)}catch(_){}
- }
+ currentParticipantIds(){return Array.from(this.profiles.keys())}
+ broadcast(message,except){for(const [id,conn] of this.connections)if(id!==except&&conn.open)try{conn.send(message)}catch(_){}}
  validPose(p){return p&&p.h&&p.l&&p.r&&finiteArray(p.h.p,3)&&finiteArray(p.h.q,4)&&finiteArray(p.l.p,3)&&finiteArray(p.l.q,4)&&finiteArray(p.r.p,3)&&finiteArray(p.r.q,4)}
  readTransform(el){
   el.object3D.updateMatrixWorld(true);el.object3D.getWorldPosition(this.tmp.p);el.object3D.getWorldQuaternion(this.tmp.q);
@@ -203,7 +209,7 @@ class WeirdVRMultiplayer{
  }
  removeAvatar(id){const a=this.avatars.get(id);if(a)a.remove();this.avatars.delete(id)}
  clearAvatars(){for(const a of this.avatars.values())a.remove();this.avatars.clear()}
- onFrame(now){for(const a of this.avatars.values())a.tick();this.sendPose(now);this.frame=requestAnimationFrame(t=>this.onFrame(t))}
+ onFrame(now){for(const a of this.avatars.values())a.tick();this.sendPose(now);if(this.game)this.game.tick(now);this.frame=requestAnimationFrame(t=>this.onFrame(t))}
  refreshPublicRooms(){
   if(!this.peer||!this.peer.open||this.roomCode)return;
   this.list.innerHTML='<div class="empty-state">Refreshing…</div>';
@@ -217,8 +223,10 @@ class WeirdVRMultiplayer{
  }
  renderPublicRooms(codes){
   this.list.innerHTML="";if(!codes.length){this.list.innerHTML='<div class="empty-state">No public rooms are open. Create the first one.</div>';return}
-  for(const code of codes){const card=document.createElement("div");card.className="room-card";card.innerHTML="<div><strong>"+code+"</strong><br><span>Public P2P room</span></div>";
-   const button=document.createElement("button");button.className="button small";button.textContent="Join";button.onclick=()=>this.joinCode(code,false);card.appendChild(button);this.list.appendChild(card)}
+  for(const code of codes){
+   const card=document.createElement("div");card.className="room-card";card.innerHTML="<div><strong>"+code+"</strong><br><span>Public P2P room</span></div>";
+   const button=document.createElement("button");button.className="button small";button.textContent="Join";button.onclick=()=>this.joinCode(code,false);card.appendChild(button);this.list.appendChild(card)
+  }
  }
  showMissingDialog(code){this.missingCode=code;document.getElementById("missing-room-code").textContent=code;this.dialog.classList.remove("hidden")}
  hideDialog(){this.dialog.classList.add("hidden");this.missingCode=""}
@@ -226,7 +234,7 @@ class WeirdVRMultiplayer{
  showRoom(){
   this.mainPanel.classList.add("hidden");this.roomPanel.classList.remove("hidden");
   document.getElementById("active-room-code").textContent=this.roomCode;document.getElementById("active-room-visibility").textContent=this.visibility==="public"?"Public":"Private";
-  this.worldStatus.setAttribute("value","ROOM "+this.roomCode);this.updateCount()
+  this.worldStatus.setAttribute("value","ROOM "+this.roomCode);this.updateCount();if(this.game)this.game.setRoomRole()
  }
  showMenu(){
   this.roomPanel.classList.add("hidden");this.mainPanel.classList.remove("hidden");this.worldStatus.setAttribute("value","SOLO");
@@ -242,6 +250,7 @@ class WeirdVRMultiplayer{
   for(const c of this.connections.values())try{c.close()}catch(_){}this.connections.clear();
   if(this.hostConnection)try{this.hostConnection.close()}catch(_){}this.hostConnection=null;
   this.destroyPeer();this.clearAvatars();this.profiles.clear();this.roomCode="";this.visibility="";this.isHost=false;this.rosterSize=1;clearInterval(this.directoryTimer);
+  if(this.game)this.game.resetToLobby(true);
   if(!silent){this.showMenu();this.setMenuStatus(reason||"Left room.","idle");setTimeout(()=>this.openDiscoveryPeer(),150)}
  }
  failToMenu(message){this.leaveRoom(message);this.setMenuStatus(message,"error")}
