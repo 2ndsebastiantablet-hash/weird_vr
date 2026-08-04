@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#070812">
+  <title>WEIRD VR</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <script defer src="config.js"></script>
+  <script defer src="gorilla-locomotion-web.js"></script>
+  <script defer src="multiplayer.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main id="app-ui" class="menu-shell" aria-live="polite">
+    <section id="main-panel" class="panel">
+      <div class="eyebrow">WEBXR • P2P • QUEST BROWSER</div>
+      <h1>WEIRD <span>VR</span></h1>
+      <p class="subtitle">A WebXR playground with Gorilla Tag-style hand locomotion and code-based multiplayer.</p>
+
+      <label for="player-name">Player name</label>
+      <input id="player-name" class="text-input" maxlength="18" value="Player" autocomplete="nickname">
+
+      <div class="button-grid">
+        <button id="create-public" class="button primary">Create Public Room</button>
+        <button id="create-private" class="button">Create Private Room</button>
+      </div>
+
+      <div class="join-row">
+        <input id="room-code" class="text-input code-input" maxlength="6" placeholder="ROOM CODE" autocomplete="off">
+        <button id="join-code" class="button">Join Code</button>
+      </div>
+
+      <div class="list-heading">
+        <div><h2>Public rooms</h2><p>Live rooms advertised by the PeerJS directory.</p></div>
+        <button id="refresh-public" class="button small">Refresh</button>
+      </div>
+      <div id="public-room-list" class="room-list"><div class="empty-state">Loading public rooms…</div></div>
+
+      <p id="menu-status" class="status" data-tone="idle">Starting multiplayer…</p>
+      <div class="help"><strong>How to move</strong><span>Enter VR, press your controller hands into the floor or a wall, and push backward. Faster pushes launch you farther.</span></div>
+    </section>
+
+    <section id="room-panel" class="panel hidden">
+      <div class="eyebrow">CONNECTED</div>
+      <h1 class="room-title">ROOM <span id="active-room-code">------</span></h1>
+      <div class="room-meta">
+        <div><span>Visibility</span><strong id="active-room-visibility">Private</strong></div>
+        <div><span>Players</span><strong id="active-player-count">1 / 8</strong></div>
+      </div>
+      <div class="button-grid">
+        <button id="copy-room-code" class="button primary">Copy Code</button>
+        <button id="leave-room" class="button danger">Leave Room</button>
+      </div>
+      <p id="room-status" class="status" data-tone="ready">Room ready. Use the Enter VR button.</p>
+      <p class="note">The first player hosts the room. If the host leaves, the room closes.</p>
+    </section>
+  </main>
+
+  <div id="create-room-dialog" class="dialog hidden" role="dialog" aria-modal="true">
+    <div class="dialog-card">
+      <div class="eyebrow">NO ROOM FOUND</div>
+      <h2>Create room <span id="missing-room-code">------</span>?</h2>
+      <p>No one is currently hosting that code. Should your new room be public or private?</p>
+      <div class="button-grid">
+        <button id="dialog-create-public" class="button primary">Create Public</button>
+        <button id="dialog-create-private" class="button">Create Private</button>
+      </div>
+      <button id="dialog-cancel" class="button link">Cancel</button>
+    </div>
+  </div>
+  <div id="toast" class="toast hidden"></div>
+
+  <a-scene id="game-scene"
+    background="color:#101427"
+    renderer="antialias:true;colorManagement:true;physicallyCorrectLights:true"
+    webxr="referenceSpaceType:local-floor;optionalFeatures:dom-overlay;overlayElement:#app-ui"
+    vr-mode-ui="enabled:true">
+    <a-entity light="type:hemisphere;color:#c8d8ff;groundColor:#160f25;intensity:1.1"></a-entity>
+    <a-entity light="type:directional;color:#fff;intensity:1.1;castShadow:true" position="5 10 4"></a-entity>
+    <a-entity light="type:point;color:#8b5cf6;intensity:2.1;distance:18" position="0 5 -7"></a-entity>
+    <a-sky color="#080a15"></a-sky>
+
+    <a-entity id="arena">
+      <a-box class="locomotion-surface" position="0 -0.5 0" width="34" height="1" depth="34" color="#22283d" material="roughness:.85;metalness:.06"></a-box>
+      <a-plane position="0 .012 0" rotation="-90 0 0" width="34" height="34" material="color:#55628a;wireframe:true;opacity:.35;transparent:true" geometry="primitive:plane;width:34;height:34;segmentsWidth:34;segmentsHeight:34"></a-plane>
+
+      <a-box class="locomotion-surface" position="0 2 -17" width="34" height="4" depth=".6" color="#2e3651"></a-box>
+      <a-box class="locomotion-surface" position="0 2 17" width="34" height="4" depth=".6" color="#2e3651"></a-box>
+      <a-box class="locomotion-surface" position="-17 2 0" width=".6" height="4" depth="34" color="#2e3651"></a-box>
+      <a-box class="locomotion-surface" position="17 2 0" width=".6" height="4" depth="34" color="#2e3651"></a-box>
+
+      <a-box class="locomotion-surface" position="0 .5 -4" width="5" height="1" depth="3" color="#5847a5"></a-box>
+      <a-box class="locomotion-surface" position="0 1.5 -8" width="5" height="3" depth="2" color="#694fc8"></a-box>
+      <a-box class="locomotion-surface" position="-6 1 -5" width="2" height="2" depth="5" color="#2d8c8a"></a-box>
+      <a-box class="locomotion-surface" position="6 1.75 -5" width="2" height="3.5" depth="5" color="#b04e7d"></a-box>
+      <a-box class="locomotion-surface" position="-8 .35 3" width="4" height=".7" depth="4" color="#3d77b8"></a-box>
+      <a-box class="locomotion-surface" position="8 .75 4" width="4" height="1.5" depth="4" color="#b8783d"></a-box>
+      <a-cylinder class="locomotion-surface" position="-10 2 -10" radius="1.1" height="4" color="#3b8b62"></a-cylinder>
+      <a-cylinder class="locomotion-surface" position="10 2 -11" radius="1.1" height="4" color="#8b3b62"></a-cylinder>
+
+      <a-torus position="0 3.7 -12" radius="2" radius-tubular=".12" color="#8b5cf6" animation="property:rotation;to:0 360 0;loop:true;dur:9000;easing:linear"></a-torus>
+      <a-text value="WEIRD VR" align="center" width="8" color="#fff" position="0 3.7 -16.64"></a-text>
+      <a-text id="world-room-status" value="SOLO" align="center" width="4" color="#9fb2ff" position="0 3.05 -16.62"></a-text>
+    </a-entity>
+
+    <a-entity id="player-rig" position="0 0 8"
+      gorilla-locomotion-web="head:#player-camera;leftController:#left-controller;rightController:#right-controller;leftFollower:#left-hand-follower;rightFollower:#right-hand-follower">
+      <a-camera id="player-camera" position="0 1.6 0" wasd-controls-enabled="false"></a-camera>
+      <a-entity id="left-controller" hand-controls="hand:left;handModelStyle:lowPoly;color:#f06b9d"></a-entity>
+      <a-entity id="right-controller" hand-controls="hand:right;handModelStyle:lowPoly;color:#62b5ff"></a-entity>
+    </a-entity>
+
+    <a-sphere id="left-hand-follower" radius=".085" color="#f06b9d"></a-sphere>
+    <a-sphere id="right-hand-follower" radius=".085" color="#62b5ff"></a-sphere>
+    <a-entity id="remote-players"></a-entity>
+  </a-scene>
+</body>
+</html>
