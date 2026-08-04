@@ -10,6 +10,8 @@
   <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <script defer src="config.js"></script>
   <script defer src="gorilla-locomotion-web.js"></script>
+  <script defer src="complex-data.js"></script>
+  <script defer src="complex-renderer.js"></script>
   <script defer src="procedural-complex.js"></script>
   <script defer src="gameplay.js"></script>
   <script defer src="multiplayer.js"></script>
@@ -111,7 +113,6 @@
       <a-text id="world-room-status" value="SOLO" align="center" width="4" color="#9fb2ff" position="0 3.05 -16.62"></a-text>
     </a-entity>
 
-    <!-- The modular generator owns this single match-map root. -->
     <a-entity id="match-map-complex" position="100 0 0" visible="false"></a-entity>
 
     <a-entity id="player-rig" position="0 0 8"
