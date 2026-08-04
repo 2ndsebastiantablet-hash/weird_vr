@@ -84,22 +84,25 @@
     <a-sky color="#080a15"></a-sky>
 
     <a-entity id="arena">
-      <a-box class="locomotion-surface" position="0 -0.5 0" width="34" height="1" depth="34" color="#22283d" material="roughness:.85;metalness:.06"></a-box>
-      <a-plane position="0 .012 0" rotation="-90 0 0" width="34" height="34" material="color:#55628a;wireframe:true;opacity:.35;transparent:true" geometry="primitive:plane;width:34;height:34;segmentsWidth:34;segmentsHeight:34"></a-plane>
+      <a-box position="0 -0.5 0" width="34" height="1" depth="34" color="#22283d" material="roughness:.85;metalness:.06"></a-box>
+      <a-plane position="0 .012 0" rotation="-90 0 0" width="34" height="34"
+        material="color:#55628a;wireframe:true;opacity:.35;transparent:true"
+        geometry="primitive:plane;width:34;height:34;segmentsWidth:34;segmentsHeight:34"
+        locomotion-collider="type:floor;size:34 0 34"></a-plane>
 
-      <a-box class="locomotion-surface" position="0 2 -17" width="34" height="4" depth=".6" color="#2e3651"></a-box>
-      <a-box class="locomotion-surface" position="0 2 17" width="34" height="4" depth=".6" color="#2e3651"></a-box>
-      <a-box class="locomotion-surface" position="-17 2 0" width=".6" height="4" depth="34" color="#2e3651"></a-box>
-      <a-box class="locomotion-surface" position="17 2 0" width=".6" height="4" depth="34" color="#2e3651"></a-box>
+      <a-box position="0 2 -17" width="34" height="4" depth=".6" color="#2e3651" locomotion-collider="type:box;size:34 4 .6"></a-box>
+      <a-box position="0 2 17" width="34" height="4" depth=".6" color="#2e3651" locomotion-collider="type:box;size:34 4 .6"></a-box>
+      <a-box position="-17 2 0" width=".6" height="4" depth="34" color="#2e3651" locomotion-collider="type:box;size:.6 4 34"></a-box>
+      <a-box position="17 2 0" width=".6" height="4" depth="34" color="#2e3651" locomotion-collider="type:box;size:.6 4 34"></a-box>
 
-      <a-box class="locomotion-surface" position="0 .5 -4" width="5" height="1" depth="3" color="#5847a5"></a-box>
-      <a-box class="locomotion-surface" position="0 1.5 -8" width="5" height="3" depth="2" color="#694fc8"></a-box>
-      <a-box class="locomotion-surface" position="-6 1 -5" width="2" height="2" depth="5" color="#2d8c8a"></a-box>
-      <a-box class="locomotion-surface" position="6 1.75 -5" width="2" height="3.5" depth="5" color="#b04e7d"></a-box>
-      <a-box class="locomotion-surface" position="-8 .35 3" width="4" height=".7" depth="4" color="#3d77b8"></a-box>
-      <a-box class="locomotion-surface" position="8 .75 4" width="4" height="1.5" depth="4" color="#b8783d"></a-box>
-      <a-cylinder class="locomotion-surface" position="-10 2 -10" radius="1.1" height="4" color="#3b8b62"></a-cylinder>
-      <a-cylinder class="locomotion-surface" position="10 2 -11" radius="1.1" height="4" color="#8b3b62"></a-cylinder>
+      <a-box position="0 .5 -4" width="5" height="1" depth="3" color="#5847a5" locomotion-collider="type:box;size:5 1 3"></a-box>
+      <a-box position="0 1.5 -8" width="5" height="3" depth="2" color="#694fc8" locomotion-collider="type:box;size:5 3 2"></a-box>
+      <a-box position="-6 1 -5" width="2" height="2" depth="5" color="#2d8c8a" locomotion-collider="type:box;size:2 2 5"></a-box>
+      <a-box position="6 1.75 -5" width="2" height="3.5" depth="5" color="#b04e7d" locomotion-collider="type:box;size:2 3.5 5"></a-box>
+      <a-box position="-8 .35 3" width="4" height=".7" depth="4" color="#3d77b8" locomotion-collider="type:box;size:4 .7 4"></a-box>
+      <a-box position="8 .75 4" width="4" height="1.5" depth="4" color="#b8783d" locomotion-collider="type:box;size:4 1.5 4"></a-box>
+      <a-cylinder position="-10 2 -10" radius="1.1" height="4" color="#3b8b62" locomotion-collider="type:box;size:2.2 4 2.2"></a-cylinder>
+      <a-cylinder position="10 2 -11" radius="1.1" height="4" color="#8b3b62" locomotion-collider="type:box;size:2.2 4 2.2"></a-cylinder>
 
       <a-torus position="0 3.7 -12" radius="2" radius-tubular=".12" color="#8b5cf6" animation="property:rotation;to:0 360 0;loop:true;dur:9000;easing:linear"></a-torus>
       <a-text value="WEIRD VR" align="center" width="8" color="#fff" position="0 3.7 -16.64"></a-text>
@@ -107,14 +110,22 @@
     </a-entity>
 
     <a-entity id="player-rig" position="0 0 8"
-      gorilla-locomotion-web="head:#player-camera;leftController:#left-controller;rightController:#right-controller;leftFollower:#left-hand-follower;rightFollower:#right-hand-follower">
+      gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera;playerHeightOffset:.68">
       <a-camera id="player-camera" position="0 0 0" wasd-controls-enabled="false"></a-camera>
-      <a-entity id="left-controller" position="-.3 -.35 -.4" tracked-controls="hand:left"></a-entity>
-      <a-entity id="right-controller" position=".3 -.35 -.4" tracked-controls="hand:right"></a-entity>
+
+      <a-entity id="left-hand" position="-.35 -.35 -.4" tracked-controls="hand:left">
+        <a-entity id="left-hand-visual">
+          <a-sphere id="left-hand-follower" radius=".12" color="#f06b9d" opacity=".95"></a-sphere>
+        </a-entity>
+      </a-entity>
+
+      <a-entity id="right-hand" position=".35 -.35 -.4" tracked-controls="hand:right">
+        <a-entity id="right-hand-visual">
+          <a-sphere id="right-hand-follower" radius=".12" color="#62b5ff" opacity=".95"></a-sphere>
+        </a-entity>
+      </a-entity>
     </a-entity>
 
-    <a-sphere id="left-hand-follower" radius=".085" color="#f06b9d"></a-sphere>
-    <a-sphere id="right-hand-follower" radius=".085" color="#62b5ff"></a-sphere>
     <a-entity id="remote-players"></a-entity>
   </a-scene>
 </body>
