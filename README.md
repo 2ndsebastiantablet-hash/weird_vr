@@ -19,17 +19,26 @@ A static A-Frame WebXR multiplayer survival prototype for Meta Quest Browser.
 - six-monster selection hooks for the future monster pool
 - no package manager, bundler, or build step
 
-## Shape-built match maps
+## Procedural Black Checkered Complex
 
-The match maps use A-Frame geometry rather than imported environment models. `map-loader.js` clears the three empty map roots and builds each environment before A-Frame initializes the scene.
+The previous three authored match maps and imported environment files have been removed.
 
-- **Neon Crossroads** — a nighttime city intersection with buildings, rooftop routes, neon storefronts, moving colored lights, street props, and a central rotating portal.
-- **Blackwood Manor** — a haunted mansion floor with divided rooms, a grand staircase and balcony, fireplace, library, dining space, statues, moon windows, a flickering chandelier, and a moving ghost light.
-- **Moonpine Forest** — a moonlit forest with pine trees, creek and bridge, campfire, ruined shrine, climbable rocks, mountains, animated fireflies, firelight, and a drifting spirit light.
+Every match now uses one map type: **Black Checkered Complex**. The host creates a map seed and sends it with the match-start state. Every participating client rebuilds the complex locally from that same seed so all players receive the identical layout without transferring map geometry over WebRTC.
 
-Each map includes simplified locomotion colliders that match its visible floors, walls, buildings, trees, and major props. Dynamic point lights are animated without expensive real-time shadows to keep the scene practical for Quest Browser.
+`procedural-complex.js` currently provides the foundation shell:
 
-The old uploaded GLB environment files are no longer referenced by the game.
+- one large black-and-charcoal checkerboard floor
+- waiting-room-inspired visual language
+- a four-connector Spawn Hub
+- simple dynamic lighting
+- locomotion collision
+- map-seed display and regeneration hook
+
+The complete connector rules, generation algorithm, 76 planned static modules, future dynamic pieces, performance limits, and implementation order are documented in:
+
+`docs/PROCEDURAL_COMPLEX_PLAN.md`
+
+The modular generator itself is the next implementation phase. The current shell intentionally contains only the Spawn Hub and connector markers while the piece library is designed and built.
 
 ## Locomotion source of truth
 
@@ -53,8 +62,6 @@ The movement implementation itself is unchanged from that pinned source. The gam
 - player height offset: `1.15`
 - collision surfaces use `locomotion-collider`
 
-The multiplayer system reads nested `left-hand-follower` and `right-hand-follower` spheres so the pinned locomotion component can control the hand visuals while network pose synchronization continues to work.
-
 ## Enable GitHub Pages
 
 1. Open this repository on GitHub.
@@ -68,9 +75,7 @@ The site address is:
 
 `https://2ndsebastiantablet-hash.github.io/weird_vr/`
 
-Open the HTTPS address in Meta Quest Browser and press **Enter VR**.
-
-## Quest test procedure
+## Current Quest test procedure
 
 1. Fully close any older WEIRD VR browser tab so Quest does not reuse cached files.
 2. Reopen the GitHub Pages URL.
@@ -79,8 +84,8 @@ Open the HTTPS address in Meta Quest Browser and press **Enter VR**.
 5. Confirm both hand spheres follow the Touch controllers.
 6. Test floor, wall, and prop pushing in the waiting room.
 7. Open the controller menu and start a match as host.
-8. Confirm the selected map is visible, lit, and solid.
-9. Test all three maps across repeated matches.
+8. Confirm the Black Checkered Complex shell appears.
+9. Confirm every participating player sees the same seed.
 10. Join during an active match and confirm the late player remains in the waiting room.
 
 ## Room behavior
@@ -99,12 +104,13 @@ The first player is the room host. Player pose data travels through WebRTC data 
 
 ## Important files
 
-- `index.html` — menu, waiting room, empty match-map roots, HUD, and Quest controller hierarchy
-- `map-loader.js` — builds the three geometry maps, their colliders, atmosphere, and dynamic lighting
-- `gameplay.js` — host-controlled match state, map selection, timer, late-join behavior, and future monster selection
+- `index.html` — menu, waiting room, one procedural match-map root, HUD, and Quest controller hierarchy
+- `procedural-complex.js` — checkerboard shell and future modular generator entry point
+- `docs/PROCEDURAL_COMPLEX_PLAN.md` — piece catalog and complete generation plan
+- `gameplay.js` — host-controlled seeded match state, timer, late-join behavior, and future monster selection
 - `gorilla-locomotion-web.js` — exact pinned locomotion source
 - `multiplayer.js` — room creation, discovery, joining, state synchronization, and pose synchronization
 - `config.js` — signaling, ICE server, room, and player-limit settings
 - `app.js` — secure-context and immersive-VR checks
 - `styles.css` — menu styling
-- `.github/workflows/validate.yml` — syntax, source-integrity, map, and scene validation
+- `.github/workflows/validate.yml` — syntax, source-integrity, procedural-map, and scene validation
