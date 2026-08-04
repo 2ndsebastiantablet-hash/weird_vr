@@ -108,9 +108,9 @@
 
     <a-entity id="player-rig" position="0 0 8"
       gorilla-locomotion-web="head:#player-camera;leftController:#left-controller;rightController:#right-controller;leftFollower:#left-hand-follower;rightFollower:#right-hand-follower">
-      <a-camera id="player-camera" position="0 1.6 0" wasd-controls-enabled="false"></a-camera>
-      <a-entity id="left-controller" hand-controls="hand:left;handModelStyle:lowPoly;color:#f06b9d"></a-entity>
-      <a-entity id="right-controller" hand-controls="hand:right;handModelStyle:lowPoly;color:#62b5ff"></a-entity>
+      <a-camera id="player-camera" position="0 0 0" wasd-controls-enabled="false"></a-camera>
+      <a-entity id="left-controller" position="-.3 -.35 -.4" tracked-controls="hand:left"></a-entity>
+      <a-entity id="right-controller" position=".3 -.35 -.4" tracked-controls="hand:right"></a-entity>
     </a-entity>
 
     <a-sphere id="left-hand-follower" radius=".085" color="#f06b9d"></a-sphere>
