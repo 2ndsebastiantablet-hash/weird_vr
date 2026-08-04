@@ -1,11 +1,11 @@
 # WEIRD VR
 
-A static A-Frame WebXR multiplayer playground for Meta Quest Browser.
+A static A-Frame WebXR multiplayer survival prototype for Meta Quest Browser.
 
 ## Features
 
 - Gorilla Tag-style hand locomotion
-- hand pushing against the floor, walls, and blocks
+- hand pushing against floors, walls, props, and climbable geometry
 - one-hand and two-hand launch behavior
 - gravity, air drag, and grounded drag
 - tracked Quest controllers
@@ -14,7 +14,22 @@ A static A-Frame WebXR multiplayer playground for Meta Quest Browser.
 - join by code or from a public-room list
 - unused-code prompt that creates the entered code as public or private
 - networked head and hand avatars for up to eight players
+- host-controlled four-minute matches
+- late joiners wait in the lobby until the active match ends
+- six-monster selection hooks for the future monster pool
 - no package manager, bundler, or build step
+
+## Shape-built match maps
+
+The match maps use A-Frame geometry rather than imported environment models. `map-loader.js` clears the three empty map roots and builds each environment before A-Frame initializes the scene.
+
+- **Neon Crossroads** — a nighttime city intersection with buildings, rooftop routes, neon storefronts, moving colored lights, street props, and a central rotating portal.
+- **Blackwood Manor** — a haunted mansion floor with divided rooms, a grand staircase and balcony, fireplace, library, dining space, statues, moon windows, a flickering chandelier, and a moving ghost light.
+- **Moonpine Forest** — a moonlit forest with pine trees, creek and bridge, campfire, ruined shrine, climbable rocks, mountains, animated fireflies, firelight, and a drifting spirit light.
+
+Each map includes simplified locomotion colliders that match its visible floors, walls, buildings, trees, and major props. Dynamic point lights are animated without expensive real-time shadows to keep the scene practical for Quest Browser.
+
+The old uploaded GLB environment files are no longer referenced by the game.
 
 ## Locomotion source of truth
 
@@ -27,7 +42,7 @@ The movement file in this repository is copied directly from this pinned source:
 - Source Git blob SHA: `94974d406cc880f5741f3e15e94dca2ee923947b`
 - Destination file: `gorilla-locomotion-web.js`
 
-The movement implementation itself is unchanged from that pinned source. The game scene was adapted to its required structure:
+The movement implementation itself is unchanged from that pinned source. The game scene is adapted to its required structure:
 
 - component name: `gorilla-locomotion`
 - controller IDs: `left-hand` and `right-hand`
@@ -35,7 +50,7 @@ The movement implementation itself is unchanged from that pinned source. The gam
 - camera local position: `0 0 0`
 - hand visual IDs: `left-hand-visual` and `right-hand-visual`
 - floor height: `0`
-- player height offset: `0.68`
+- player height offset: `1.15`
 - collision surfaces use `locomotion-collider`
 
 The multiplayer system reads nested `left-hand-follower` and `right-hand-follower` spheres so the pinned locomotion component can control the hand visuals while network pose synchronization continues to work.
@@ -57,15 +72,16 @@ Open the HTTPS address in Meta Quest Browser and press **Enter VR**.
 
 ## Quest test procedure
 
-1. Fully close any older WEIRD VR browser tab so Quest does not reuse the old JavaScript.
+1. Fully close any older WEIRD VR browser tab so Quest does not reuse cached files.
 2. Reopen the GitHub Pages URL.
 3. Create or join a room.
 4. Press **Enter VR**.
 5. Confirm both hand spheres follow the Touch controllers.
-6. Press either sphere into the floor and pull the real controller backward.
-7. Test one-hand and two-hand floor launches.
-8. Push against the walls and blocks.
-9. Join from a second headset or browser and confirm head and hand poses synchronize.
+6. Test floor, wall, and prop pushing in the waiting room.
+7. Open the controller menu and start a match as host.
+8. Confirm the selected map is visible, lit, and solid.
+9. Test all three maps across repeated matches.
+10. Join during an active match and confirm the late player remains in the waiting room.
 
 ## Room behavior
 
@@ -83,10 +99,12 @@ The first player is the room host. Player pose data travels through WebRTC data 
 
 ## Important files
 
-- `index.html` — menu, multiplayer scene wiring, locomotion colliders, and Quest controller hierarchy
+- `index.html` — menu, waiting room, empty match-map roots, HUD, and Quest controller hierarchy
+- `map-loader.js` — builds the three geometry maps, their colliders, atmosphere, and dynamic lighting
+- `gameplay.js` — host-controlled match state, map selection, timer, late-join behavior, and future monster selection
 - `gorilla-locomotion-web.js` — exact pinned locomotion source
-- `multiplayer.js` — room creation, discovery, joining, and pose synchronization
+- `multiplayer.js` — room creation, discovery, joining, state synchronization, and pose synchronization
 - `config.js` — signaling, ICE server, room, and player-limit settings
 - `app.js` — secure-context and immersive-VR checks
 - `styles.css` — menu styling
-- `.github/workflows/validate.yml` — syntax and pinned-source validation
+- `.github/workflows/validate.yml` — syntax, source-integrity, map, and scene validation
