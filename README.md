@@ -1,94 +1,92 @@
 # WEIRD VR
 
-A static WebXR multiplayer playground for Meta Quest Browser.
+A static A-Frame WebXR multiplayer playground for Meta Quest Browser.
 
-## What is included
+## Features
 
-- A-Frame WebXR scene that runs directly from GitHub Pages
 - Gorilla Tag-style hand locomotion
+- hand pushing against the floor, walls, and blocks
+- one-hand and two-hand launch behavior
+- gravity, air drag, and grounded drag
+- tracked Quest controllers
 - PeerJS/WebRTC peer-to-peer multiplayer
-- Public and private six-character rooms
-- Join by room code
-- Public room browser
-- The requested empty-code flow: when neither a public nor private host exists for an entered code, the game asks whether to create that exact room as public or private
-- Networked head and hand avatars for up to eight players
-- No package manager, bundler, or build step
+- public and private six-character rooms
+- join by code or from a public-room list
+- unused-code prompt that creates the entered code as public or private
+- networked head and hand avatars for up to eight players
+- no package manager, bundler, or build step
 
-## GorillaLocomotion source
+## Locomotion source of truth
 
-Another Axiom's official `GorillaLocomotion` repository is a Unity/C# project, so its `Player.cs` cannot run directly inside a web browser. `gorilla-locomotion-web.js` is a clean JavaScript/A-Frame adaptation of the official movement model, including:
+The movement file in this repository is copied directly from this pinned source:
 
-- maximum arm-length clamping
-- sticky hand contacts
-- two-hand displacement averaging
-- velocity-history launches
-- jump-speed limiting
-- gravity and air drag
-- surface sliding
-- hand unsticking
+- Repository: `2ndsebastiantablet-hash/feeble`
+- Commit: `28a426aa6ade789320e2202cfa8d2fe61b46b539`
+- Folder: `templates/gorilla-tag-locomotion`
+- Source file: `templates/gorilla-tag-locomotion/gorilla-locomotion.js`
+- Source Git blob SHA: `94974d406cc880f5741f3e15e94dca2ee923947b`
+- Destination file: `gorilla-locomotion-web.js`
 
-Original source: `https://github.com/Another-Axiom/GorillaLocomotion`
+The movement implementation itself is unchanged from that pinned source. The game scene was adapted to its required structure:
 
-The original project is MIT licensed. Its license is preserved in `THIRD_PARTY_LICENSES/Another-Axiom-GorillaLocomotion-MIT.txt`.
+- component name: `gorilla-locomotion`
+- controller IDs: `left-hand` and `right-hand`
+- controller component: `tracked-controls`
+- camera local position: `0 0 0`
+- hand visual IDs: `left-hand-visual` and `right-hand-visual`
+- floor height: `0`
+- player height offset: `0.68`
+- collision surfaces use `locomotion-collider`
 
-## Turn on GitHub Pages
+The multiplayer system reads nested `left-hand-follower` and `right-hand-follower` spheres so the pinned locomotion component can control the hand visuals while network pose synchronization continues to work.
+
+## Enable GitHub Pages
 
 1. Open this repository on GitHub.
 2. Select **Settings**.
-3. Select **Pages** in the left sidebar.
+3. Select **Pages**.
 4. Under **Build and deployment**, choose **Deploy from a branch**.
 5. Select branch **main** and folder **/(root)**.
-6. Save and wait for the deployment to finish.
+6. Save and wait for deployment.
 
-The site address will be:
+The site address is:
 
 `https://2ndsebastiantablet-hash.github.io/weird_vr/`
 
-Open that HTTPS address in Meta Quest Browser and press **Enter VR**.
+Open the HTTPS address in Meta Quest Browser and press **Enter VR**.
+
+## Quest test procedure
+
+1. Fully close any older WEIRD VR browser tab so Quest does not reuse the old JavaScript.
+2. Reopen the GitHub Pages URL.
+3. Create or join a room.
+4. Press **Enter VR**.
+5. Confirm both hand spheres follow the Touch controllers.
+6. Press either sphere into the floor and pull the real controller backward.
+7. Test one-hand and two-hand floor launches.
+8. Push against the walls and blocks.
+9. Join from a second headset or browser and confirm head and hand poses synchronize.
 
 ## Room behavior
 
-### Public room
+Public hosts use a PeerJS ID beginning with `weird-vr-public-`. Private hosts use `weird-vr-private-`. Entering a room code checks both host types. When neither exists, the game asks whether to create that exact code publicly or privately.
 
-The host claims a PeerJS ID beginning with `weird-vr-public-`. The public-room browser calls PeerJS discovery and displays matching IDs.
+The first player is the room host. Player pose data travels through WebRTC data channels. If the host leaves, the room closes.
 
-### Private room
-
-The host claims a PeerJS ID beginning with `weird-vr-private-`. It does not appear in the public-room list, but anyone with the code can join.
-
-### Joining an unused code
-
-The client tries the public host ID, then the private host ID. If neither exists, a dialog asks whether to create that exact code publicly or privately.
-
-### Host ownership
-
-The first player is the room host. All player data travels through WebRTC data channels. The host relays guest poses to the other guests. If the host leaves, the room closes.
-
-## Important networking limits
+## Networking limits
 
 - PeerJS Cloud is used for signaling and public-room discovery.
-- WebRTC uses free public STUN servers by default.
-- Some strict, school, enterprise, cellular, or carrier-grade NAT networks require a TURN relay. Add TURN credentials in `config.js` for production reliability.
-- Public discovery depends on the PeerJS server allowing `listAllPeers`. Code joining still works if discovery is temporarily unavailable.
-- This prototype has no accounts, moderation, voice chat, or authoritative anti-cheat server.
+- Free public STUN servers are configured.
+- Some strict or carrier-grade NAT networks require a TURN relay.
+- Public discovery depends on PeerJS allowing peer listing; direct room-code joining can still work when the public list is unavailable.
+- This prototype does not yet include accounts, moderation, voice chat, host migration, or an authoritative game server.
 
-## Quest playtest
+## Important files
 
-1. Enable GitHub Pages.
-2. Open the Pages URL in Meta Quest Browser.
-3. Create a room before entering VR.
-4. Press **Enter VR**.
-5. Put a hand sphere against the floor.
-6. Push your real controller backward to move your body forward.
-7. Push quickly to launch.
-8. Test walls, raised blocks, and the arena boundary.
-9. Open the same page on another headset or browser and join the room.
-
-## Files
-
-- `index.html` — menu and WebXR arena
-- `styles.css` — responsive menu styling
-- `config.js` — room, signaling, STUN, and player-limit configuration
-- `gorilla-locomotion-web.js` — WebXR movement adaptation
-- `multiplayer.js` — public/private room and pose networking
-- `app.js` — startup and WebXR checks
+- `index.html` — menu, multiplayer scene wiring, locomotion colliders, and Quest controller hierarchy
+- `gorilla-locomotion-web.js` — exact pinned locomotion source
+- `multiplayer.js` — room creation, discovery, joining, and pose synchronization
+- `config.js` — signaling, ICE server, room, and player-limit settings
+- `app.js` — secure-context and immersive-VR checks
+- `styles.css` — menu styling
+- `.github/workflows/validate.yml` — syntax and pinned-source validation
