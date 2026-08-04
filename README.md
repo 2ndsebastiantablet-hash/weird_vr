@@ -21,24 +21,48 @@ A static A-Frame WebXR multiplayer survival prototype for Meta Quest Browser.
 
 ## Procedural Black Checkered Complex
 
-The previous three authored match maps and imported environment files have been removed.
+Every match uses one map type: **Black Checkered Complex**. The host creates an eight-character seed and sends it with the match-start state. Every participating client reconstructs the same layout locally, so map geometry does not need to be streamed over WebRTC.
 
-Every match now uses one map type: **Black Checkered Complex**. The host creates a map seed and sends it with the match-start state. Every participating client rebuilds the complex locally from that same seed so all players receive the identical layout without transferring map geometry over WebRTC.
+The first working modular batch is implemented:
 
-`procedural-complex.js` currently provides the foundation shell:
+1. Spawn Hub
+2. Short Straight Hall
+3. Medium Straight Hall
+4. Long Straight Hall
+5. Corner Hall
+6. T Junction
+7. Four-Way Junction
+8. Small Empty Room
+9. Square Pillar Room
+10. Stepping Block Room
+11. Ramp Up
+12. Plain Wall Cap
 
-- one large black-and-charcoal checkerboard floor
-- waiting-room-inspired visual language
-- a four-connector Spawn Hub
-- simple dynamic lighting
-- locomotion collision
-- map-seed display and regeneration hook
+The generator currently creates approximately 24 core pieces and then attaches caps to remaining usable connectors, normally producing about 29–38 total modules. It builds a mandatory main route, branches, junctions, rooms, a guaranteed transition to an upper level, platforming spaces, and sealed dead ends.
 
-The complete connector rules, generation algorithm, 76 planned static modules, future dynamic pieces, performance limits, and implementation order are documented in:
+### Enclosure and escape protection
+
+Every normal module has its own visible solid ceiling at the top of the room. The Ramp Up module is a taller enclosed shaft with a roof above its upper level. The full generation area also has a second invisible collision ceiling and tall perimeter walls as a final escape barrier.
+
+Ceilings, floors, walls, doorway lintels, platforms, pillars, ramps, and caps all use simplified `locomotion-collider` boxes. After a new seed is generated, the Gorilla locomotion component refreshes its collider list so it uses the new map rather than deleted geometry from the previous round.
+
+### Generation rules
+
+- 6-meter construction grid
+- one ground level and one upper level
+- connector alignment and 90-degree piece rotation
+- deterministic seeded random selection
+- footprint and level overlap rejection
+- bounded generation area
+- unused connector capping or sealing
+- generated navigation and monster-spawn points
+- one dominant lighting color kit per match
+- black-and-charcoal checkerboard floors
+- dynamic point lights without real-time shadows
+
+The complete planned 76-piece library and later dynamic modules are documented in:
 
 `docs/PROCEDURAL_COMPLEX_PLAN.md`
-
-The modular generator itself is the next implementation phase. The current shell intentionally contains only the Spawn Hub and connector markers while the piece library is designed and built.
 
 ## Locomotion source of truth
 
@@ -75,18 +99,19 @@ The site address is:
 
 `https://2ndsebastiantablet-hash.github.io/weird_vr/`
 
-## Current Quest test procedure
+## Quest test procedure
 
-1. Fully close any older WEIRD VR browser tab so Quest does not reuse cached files.
-2. Reopen the GitHub Pages URL.
-3. Create or join a room.
-4. Press **Enter VR**.
-5. Confirm both hand spheres follow the Touch controllers.
-6. Test floor, wall, and prop pushing in the waiting room.
-7. Open the controller menu and start a match as host.
-8. Confirm the Black Checkered Complex shell appears.
-9. Confirm every participating player sees the same seed.
-10. Join during an active match and confirm the late player remains in the waiting room.
+1. Fully close every older WEIRD VR browser tab.
+2. Reopen the GitHub Pages URL after deployment finishes.
+3. Create a room and enter VR.
+4. Open the controller menu and start a match.
+5. Confirm the map contains connected hallways, junctions, rooms, caps, and an upper level.
+6. Confirm every room and hallway has a visible ceiling.
+7. Try launching upward against walls and platforming blocks and confirm the roof prevents leaving the map.
+8. Travel through the Ramp Up piece and confirm the upper route is solid.
+9. Start multiple matches and confirm the layout and lighting change with each seed.
+10. Join from a second player and confirm both participating players receive the same layout.
+11. Join during an active match and confirm the late player remains in the waiting room.
 
 ## Room behavior
 
@@ -104,13 +129,13 @@ The first player is the room host. Player pose data travels through WebRTC data 
 
 ## Important files
 
-- `index.html` — menu, waiting room, one procedural match-map root, HUD, and Quest controller hierarchy
-- `procedural-complex.js` — checkerboard shell and future modular generator entry point
-- `docs/PROCEDURAL_COMPLEX_PLAN.md` — piece catalog and complete generation plan
-- `gameplay.js` — host-controlled seeded match state, timer, late-join behavior, and future monster selection
+- `index.html` — menu, waiting room, procedural map root, HUD, and Quest controller hierarchy
+- `procedural-complex.js` — module definitions, seeded placement, geometry, ceilings, lighting, collisions, and generated spawn data
+- `docs/PROCEDURAL_COMPLEX_PLAN.md` — full piece catalog and generation plan
+- `gameplay.js` — seeded match state, timer, late-join behavior, and generated monster-spawn selection
 - `gorilla-locomotion-web.js` — exact pinned locomotion source
 - `multiplayer.js` — room creation, discovery, joining, state synchronization, and pose synchronization
 - `config.js` — signaling, ICE server, room, and player-limit settings
 - `app.js` — secure-context and immersive-VR checks
 - `styles.css` — menu styling
-- `.github/workflows/validate.yml` — syntax, source-integrity, procedural-map, and scene validation
+- `.github/workflows/validate.yml` — syntax, source-integrity, module, determinism, ceiling, and scene validation
