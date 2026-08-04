@@ -5,25 +5,21 @@ A static A-Frame WebXR multiplayer survival prototype for Meta Quest Browser.
 ## Features
 
 - Gorilla Tag-style hand locomotion
-- hand pushing against floors, walls, props, and climbable geometry
-- one-hand and two-hand launch behavior
-- gravity, air drag, and grounded drag
-- tracked Quest controllers
-- PeerJS/WebRTC peer-to-peer multiplayer
-- public and private six-character rooms
-- join by code or from a public-room list
-- unused-code prompt that creates the entered code as public or private
-- networked head and hand avatars for up to eight players
+- PeerJS/WebRTC multiplayer for up to eight players
+- public and private room codes
 - host-controlled four-minute matches
-- late joiners wait in the lobby until the active match ends
-- six-monster selection hooks for the future monster pool
+- late joiners wait in the lobby until the next match
+- one deterministic procedural Black Checkered Complex per match
+- generated navigation points and future monster spawn positions
 - no package manager, bundler, or build step
 
 ## Procedural Black Checkered Complex
 
-Every match uses one map type: **Black Checkered Complex**. The host creates an eight-character seed and sends it with the match-start state. Every participating client reconstructs the same layout locally, so map geometry does not need to be streamed over WebRTC.
+The host creates an eight-character map seed and sends it with the match-start state. Every participating client rebuilds the same layout locally, so the map does not need to be streamed through WebRTC.
 
-The first working modular batch is implemented:
+The generator now has **24 modular pieces**.
+
+### First batch
 
 1. Spawn Hub
 2. Short Straight Hall
@@ -38,62 +34,80 @@ The first working modular batch is implemented:
 11. Ramp Up
 12. Plain Wall Cap
 
-The generator currently creates approximately 24 core pieces and then attaches caps to remaining usable connectors, normally producing about 29–38 total modules. It builds a mandatory main route, branches, junctions, rooms, a guaranteed transition to an upper level, platforming spaces, and sealed dead ends.
+### Second batch
 
-### Enclosure and escape protection
+13. Offset S Hall
+14. Zigzag Hall
+15. Pillar Hall
+16. Windowed Hall
+17. Low Beam Hall
+18. Split-Level Hall
+19. Wide T Junction
+20. Offset Crossroads
+21. Fork Junction
+22. Double Hall Loop
+23. Ring Junction
+24. Broken Crossroads
 
-Every normal module has its own visible solid ceiling at the top of the room. The Ramp Up module is a taller enclosed shaft with a roof above its upper level. The full generation area also has a second invisible collision ceiling and tall perimeter walls as a final escape barrier.
+The layout builder creates a mandatory main route, a guaranteed Ramp Up to the upper level, side branches, junctions, rooms, platforming spaces, loops, and sealed dead ends. It attempts to place every second-batch piece in each generated map before filling remaining space with weighted random modules.
 
-Ceilings, floors, walls, doorway lintels, platforms, pillars, ramps, and caps all use simplified `locomotion-collider` boxes. After a new seed is generated, the Gorilla locomotion component refreshes its collider list so it uses the new map rather than deleted geometry from the previous round.
+## Collision policy
 
-### Generation rules
+All current and future gameplay geometry follows one rule: **physical-looking map geometry is created through the collision-first renderer and automatically receives a locomotion collider**.
+
+This includes:
+
+- floors and upper floors
+- ceilings and the backup escape ceiling
+- exterior and interior walls
+- doorway lintels
+- hallway dividers
+- pillars and windows
+- stepping blocks and raised platforms
+- low overhead beams
+- Ramp Up steps and shaft walls
+- connector caps
+- perimeter escape walls
+
+Pure text and light entities are decorative and do not receive collision.
+
+The procedural map is created after the A-Frame scene begins loading, so relying only on normal component discovery left the Gorilla locomotion component with its old startup collider list. `complex-renderer.js` now maintains an explicit runtime collider registry. It installs collider data directly, replaces the locomotion component's collider list after every generation, retries registration while A-Frame initializes the new entities, and refreshes again when VR starts.
+
+The map root exposes these debugging values after generation:
+
+- `data-collider-count`
+- `data-active-collider-count`
+- `data-collision-ready`
+
+## Generation rules
 
 - 6-meter construction grid
-- one ground level and one upper level
-- connector alignment and 90-degree piece rotation
-- deterministic seeded random selection
+- ground and upper levels
+- 90-degree module rotation
+- compatible connector alignment
+- deterministic seeded selection
 - footprint and level overlap rejection
-- bounded generation area
+- 192-meter bounded generation area
 - unused connector capping or sealing
-- generated navigation and monster-spawn points
-- one dominant lighting color kit per match
-- black-and-charcoal checkerboard floors
-- dynamic point lights without real-time shadows
+- one dominant lighting kit per match
+- black-and-charcoal checkerboard surfaces
+- dynamic lights without real-time shadows
 
-The complete planned 76-piece library and later dynamic modules are documented in:
-
-`docs/PROCEDURAL_COMPLEX_PLAN.md`
+The full planned 76-piece library and later dynamic modules are documented in `docs/PROCEDURAL_COMPLEX_PLAN.md`.
 
 ## Locomotion source of truth
 
-The movement file in this repository is copied directly from this pinned source:
+The movement file is copied directly from this pinned source:
 
 - Repository: `2ndsebastiantablet-hash/feeble`
 - Commit: `28a426aa6ade789320e2202cfa8d2fe61b46b539`
-- Folder: `templates/gorilla-tag-locomotion`
-- Source file: `templates/gorilla-tag-locomotion/gorilla-locomotion.js`
+- Source: `templates/gorilla-tag-locomotion/gorilla-locomotion.js`
 - Source Git blob SHA: `94974d406cc880f5741f3e15e94dca2ee923947b`
-- Destination file: `gorilla-locomotion-web.js`
+- Destination: `gorilla-locomotion-web.js`
 
-The movement implementation itself is unchanged from that pinned source. The game scene is adapted to its required structure:
+The pinned locomotion file itself remains unchanged. The procedural renderer registers compatible `locomotion-collider` boxes around the generated geometry.
 
-- component name: `gorilla-locomotion`
-- controller IDs: `left-hand` and `right-hand`
-- controller component: `tracked-controls`
-- camera local position: `0 0 0`
-- hand visual IDs: `left-hand-visual` and `right-hand-visual`
-- floor height: `0`
-- player height offset: `1.15`
-- collision surfaces use `locomotion-collider`
-
-## Enable GitHub Pages
-
-1. Open this repository on GitHub.
-2. Select **Settings**.
-3. Select **Pages**.
-4. Under **Build and deployment**, choose **Deploy from a branch**.
-5. Select branch **main** and folder **/(root)**.
-6. Save and wait for deployment.
+## GitHub Pages
 
 The site address is:
 
@@ -101,41 +115,26 @@ The site address is:
 
 ## Quest test procedure
 
-1. Fully close every older WEIRD VR browser tab.
-2. Reopen the GitHub Pages URL after deployment finishes.
-3. Create a room and enter VR.
-4. Open the controller menu and start a match.
-5. Confirm the map contains connected hallways, junctions, rooms, caps, and an upper level.
-6. Confirm every room and hallway has a visible ceiling.
-7. Try launching upward against walls and platforming blocks and confirm the roof prevents leaving the map.
-8. Travel through the Ramp Up piece and confirm the upper route is solid.
-9. Start multiple matches and confirm the layout and lighting change with each seed.
-10. Join from a second player and confirm both participating players receive the same layout.
-11. Join during an active match and confirm the late player remains in the waiting room.
-
-## Room behavior
-
-Public hosts use a PeerJS ID beginning with `weird-vr-public-`. Private hosts use `weird-vr-private-`. Entering a room code checks both host types. When neither exists, the game asks whether to create that exact code publicly or privately.
-
-The first player is the room host. Player pose data travels through WebRTC data channels. If the host leaves, the room closes.
-
-## Networking limits
-
-- PeerJS Cloud is used for signaling and public-room discovery.
-- Free public STUN servers are configured.
-- Some strict or carrier-grade NAT networks require a TURN relay.
-- Public discovery depends on PeerJS allowing peer listing; direct room-code joining can still work when the public list is unavailable.
-- This prototype does not yet include accounts, moderation, voice chat, host migration, or an authoritative game server.
+1. Wait for GitHub Pages to redeploy.
+2. Completely close every older WEIRD VR Quest Browser tab.
+3. Reopen the site, create a room, and enter VR.
+4. Start a match from the controller menu.
+5. Push against the Spawn Hub walls, floor blocks, and ceiling.
+6. Test straight halls, corners, walls, doorway sides, and lintels.
+7. Push against the stepping blocks, pillars, window panels, dividers, beams, and raised platforms.
+8. Travel through the Ramp Up and test every step, side wall, upper doorway, and roof.
+9. Try launching above the map and confirm the module ceilings and backup escape ceiling stop the player.
+10. Start several matches and confirm the layout changes while collisions remain active.
+11. Test from a second headset and confirm both players receive the same seeded layout.
 
 ## Important files
 
-- `index.html` — menu, waiting room, procedural map root, HUD, and Quest controller hierarchy
-- `procedural-complex.js` — module definitions, seeded placement, geometry, ceilings, lighting, collisions, and generated spawn data
-- `docs/PROCEDURAL_COMPLEX_PLAN.md` — full piece catalog and generation plan
-- `gameplay.js` — seeded match state, timer, late-join behavior, and generated monster-spawn selection
+- `index.html` — UI, waiting room, procedural map root, HUD, and script order
+- `complex-data.js` — all 24 module definitions and deterministic connector placement
+- `complex-renderer.js` — visible geometry, lighting, ceilings, runtime collider registration, and spawn summaries
+- `procedural-complex.js` — public generator API used by gameplay
+- `gameplay.js` — match timer, seed synchronization, late joining, and monster spawn selection
 - `gorilla-locomotion-web.js` — exact pinned locomotion source
-- `multiplayer.js` — room creation, discovery, joining, state synchronization, and pose synchronization
-- `config.js` — signaling, ICE server, room, and player-limit settings
-- `app.js` — secure-context and immersive-VR checks
-- `styles.css` — menu styling
-- `.github/workflows/validate.yml` — syntax, source-integrity, module, determinism, ceiling, and scene validation
+- `multiplayer.js` — room and pose synchronization
+- `docs/PROCEDURAL_COMPLEX_PLAN.md` — complete modular-map plan
+- `.github/workflows/validate.yml` — syntax, determinism, module, collision, and scene checks
