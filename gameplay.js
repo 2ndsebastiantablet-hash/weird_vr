@@ -38,6 +38,15 @@ function createMapSeed(){
   return random[0].toString(16).padStart(8,"0");
 }
 
+function inspectComplex(seed){
+  const generator=window.WEIRD_VR_COMPLEX;
+  if(!generator||typeof generator.inspect!=="function")return null;
+  try{return generator.inspect(seed)}catch(error){
+    console.error("[WEIRD VR] Procedural complex inspection failed",error);
+    return null;
+  }
+}
+
 function generateComplex(seed){
   const generator=window.WEIRD_VR_COMPLEX;
   if(!generator||typeof generator.generate!=="function")return null;
@@ -45,6 +54,11 @@ function generateComplex(seed){
     console.error("[WEIRD VR] Procedural complex generation failed",error);
     return null;
   }
+}
+
+function clearComplex(){
+  const generator=window.WEIRD_VR_COMPLEX;
+  if(generator&&typeof generator.clear==="function")generator.clear();
 }
 
 function formatTime(ms){
@@ -159,7 +173,8 @@ class WeirdVRGameLoop{
     if(!this.network.isHost||!this.network.roomCode||this.state.active)return;
     const mapId="complex";
     const mapSeed=createMapSeed();
-    const generated=generateComplex(mapSeed);
+    // Inspect the deterministic layout without building hundreds of hidden A-Frame entities.
+    const generated=inspectComplex(mapSeed);
     const generatedSpawns=generated&&Array.isArray(generated.monsterSpawns)?generated.monsterSpawns:[];
     const availableSpawns=generatedSpawns.length>=6?generatedSpawns:MAPS[mapId].monsterSpawns;
     const participants=this.network.currentParticipantIds();
@@ -211,7 +226,12 @@ class WeirdVRGameLoop{
     };
     this.localParticipant=participants.includes(this.network.peerId);
     if(this.localParticipant){
-      generateComplex(this.state.mapSeed);
+      const generated=generateComplex(this.state.mapSeed);
+      if(!generated){
+        this.network.activeStatus("Map generation failed. Returning to waiting room.","error");
+        this.applyMatchEnd("Map generation failed");
+        return;
+      }
       this.showMap(map.id);
       this.teleport(map.spawn);
       this.waitingText.setAttribute("visible",false);
@@ -240,6 +260,7 @@ class WeirdVRGameLoop{
     this.mapText.setAttribute("visible",false);
     this.waitingText.setAttribute("visible",false);
     this.setMenu(false);
+    clearComplex();
     this.updateMenu();
   }
 
@@ -252,6 +273,7 @@ class WeirdVRGameLoop{
     if(this.mapText)this.mapText.setAttribute("visible",false);
     if(this.waitingText)this.waitingText.setAttribute("visible",false);
     if(this.menu)this.setMenu(false);
+    clearComplex();
   }
 
   showLobby(){
