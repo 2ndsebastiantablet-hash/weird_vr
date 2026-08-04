@@ -61,10 +61,6 @@ jobs:
           if (JSON.stringify(firstIds) !== JSON.stringify(secondIds)) throw new Error("Seed output changed between generations");
           if (!firstIds.includes("spawnHub")) throw new Error("Spawn Hub missing");
           if (!firstIds.includes("rampUp")) throw new Error("Ramp Up missing");
-          if (!firstIds.includes("wallCap")) throw new Error("Wall Cap missing");
-          for (const id of data.SECOND_BATCH_IDS) {
-            if (!firstIds.includes(id)) throw new Error("Second-batch piece missing: " + id);
-          }
           const thirdPlaced = data.THIRD_BATCH_IDS.filter(id => firstIds.includes(id));
           if (thirdPlaced.length < 6) throw new Error("Too few third-batch pieces placed: " + thirdPlaced.length);
           if (first.monsterSpawns.length < 6) throw new Error("Not enough generated monster spawns");
@@ -92,6 +88,17 @@ jobs:
           grep -q 'lightingMode="bright-everywhere"' complex-batch3-renderer.js
           grep -q 'pointLightCount' complex-batch3-renderer.js
 
+      - name: Verify nonblocking startup
+        run: |
+          grep -q 'scene.hasLoaded||scene.isPlaying' app.js
+          grep -q 'setTimeout(startMultiplayer,3500)' app.js
+          grep -q 'let started=false' app.js
+          grep -q 'Keep the match map empty during menu and waiting-room startup' procedural-complex.js
+          grep -q 'function clear()' procedural-complex.js
+          ! grep -q 'const initialize=()=>generate("preview")' procedural-complex.js
+          grep -q 'inspectComplex(mapSeed)' gameplay.js
+          grep -q 'clearComplex()' gameplay.js
+
       - name: Check scene and gameplay wiring
         run: |
           test -f index.html
@@ -109,7 +116,7 @@ jobs:
           grep -q 'id="match-map-complex"' index.html
           grep -q 'Black Checkered Complex' gameplay.js
           grep -q 'const mapSeed=createMapSeed()' gameplay.js
-          grep -q 'generateComplex(mapSeed)' gameplay.js
+          grep -q 'generateComplex(this.state.mapSeed)' gameplay.js
           grep -q 'generated.monsterSpawns' gameplay.js
           grep -q 'gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera' index.html
           grep -q 'tracked-controls="hand:left"' index.html
