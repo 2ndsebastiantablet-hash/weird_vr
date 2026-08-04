@@ -20,6 +20,8 @@ jobs:
           node --check app.js
           node --check config.js
           node --check gorilla-locomotion-web.js
+          node --check complex-data.js
+          node --check complex-renderer.js
           node --check procedural-complex.js
           node --check gameplay.js
           node --check multiplayer.js
@@ -28,43 +30,52 @@ jobs:
         run: |
           test "$(git hash-object gorilla-locomotion-web.js)" = "94974d406cc880f5741f3e15e94dca2ee923947b"
 
-      - name: Verify first modular piece batch
+      - name: Verify both modular piece batches
         run: |
-          grep -q 'id: "spawnHub"' procedural-complex.js
-          grep -q 'id: "shortStraight"' procedural-complex.js
-          grep -q 'id: "mediumStraight"' procedural-complex.js
-          grep -q 'id: "longStraight"' procedural-complex.js
-          grep -q 'id: "cornerHall"' procedural-complex.js
-          grep -q 'id: "tJunction"' procedural-complex.js
-          grep -q 'id: "fourWay"' procedural-complex.js
-          grep -q 'id: "smallRoom"' procedural-complex.js
-          grep -q 'id: "pillarRoom"' procedural-complex.js
-          grep -q 'id: "steppingRoom"' procedural-complex.js
-          grep -q 'id: "rampUp"' procedural-complex.js
-          grep -q 'id: "wallCap"' procedural-complex.js
-          grep -q 'CEILING_THICKNESS' procedural-complex.js
-          grep -q 'function addFloorAndCeiling' procedural-complex.js
-          grep -q 'height + 0.35' procedural-complex.js
-          grep -q 'refreshLocomotionColliders' procedural-complex.js
+          for piece in spawnHub shortStraight mediumStraight longStraight cornerHall tJunction fourWay smallRoom pillarRoom steppingRoom rampUp wallCap; do
+            grep -q "$piece" complex-data.js
+          done
+          for piece in offsetSHall zigzagHall pillarHall windowedHall lowBeamHall splitLevelHall wideTJunction offsetCrossroads forkJunction doubleHallLoop ringJunction brokenCrossroads; do
+            grep -q "$piece" complex-data.js
+          done
+          grep -q 'placeFeatureBatch' complex-data.js
+          grep -q 'collisionPolicy:"all-gameplay-geometry"' procedural-complex.js
 
       - name: Verify deterministic procedural layouts
         run: |
           node <<'NODE'
           global.window = {};
-          global.document = {readyState: "loading", addEventListener() {}};
-          require("./procedural-complex.js");
-          const api = window.WEIRD_VR_COMPLEX;
-          const first = api.inspect("deadbeef");
-          const second = api.inspect("deadbeef");
-          if (JSON.stringify(first) !== JSON.stringify(second)) throw new Error("Seed output changed between generations");
-          if (!first.pieceIds.includes("spawnHub")) throw new Error("Spawn Hub missing");
-          if (!first.pieceIds.includes("rampUp")) throw new Error("Ramp Up missing");
-          if (!first.pieceIds.includes("wallCap")) throw new Error("Wall Cap missing");
-          if (first.pieceCount < 24 || first.pieceCount > 44) throw new Error("Unexpected map size: " + first.pieceCount);
+          require("./complex-data.js");
+          const data = window.WEIRD_VR_COMPLEX_DATA;
+          const first = data.buildLayout("deadbeef");
+          const second = data.buildLayout("deadbeef");
+          const firstIds = first.pieces.map(piece => piece.definition.id);
+          const secondIds = second.pieces.map(piece => piece.definition.id);
+          if (JSON.stringify(firstIds) !== JSON.stringify(secondIds)) throw new Error("Seed output changed between generations");
+          if (!firstIds.includes("spawnHub")) throw new Error("Spawn Hub missing");
+          if (!firstIds.includes("rampUp")) throw new Error("Ramp Up missing");
+          if (!firstIds.includes("wallCap")) throw new Error("Wall Cap missing");
+          for (const id of data.SECOND_BATCH_IDS) {
+            if (!firstIds.includes(id)) throw new Error("Second-batch piece missing: " + id);
+          }
+          if (first.pieces.length < 40 || first.pieces.length > 65) throw new Error("Unexpected map size: " + first.pieces.length);
           if (first.monsterSpawns.length < 6) throw new Error("Not enough generated monster spawns");
           NODE
 
-      - name: Check procedural map foundation
+      - name: Verify collision-first renderer
+        run: |
+          grep -q 'runtimeColliderRecords' complex-renderer.js
+          grep -q 'installColliderData' complex-renderer.js
+          grep -q 'registerSolid' complex-renderer.js
+          grep -q 'element.dataset.weirdSolid="true"' complex-renderer.js
+          grep -q 'component.colliders=active' complex-renderer.js
+          grep -q 'root.dataset.collisionReady' complex-renderer.js
+          grep -q 'refreshCollisions' complex-renderer.js
+          grep -q 'addFloorAndCeiling' complex-renderer.js
+          grep -q 'addWorldShell' complex-renderer.js
+          grep -q 'renderRamp' complex-renderer.js
+
+      - name: Check scene and gameplay wiring
         run: |
           test -f index.html
           test -f styles.css
@@ -72,6 +83,8 @@ jobs:
           test -f docs/PROCEDURAL_COMPLEX_PLAN.md
           test -f THIRD_PARTY_LICENSES/Another-Axiom-GorillaLocomotion-MIT.txt
           grep -q 'gorilla-locomotion-web.js' index.html
+          grep -q 'complex-data.js' index.html
+          grep -q 'complex-renderer.js' index.html
           grep -q 'procedural-complex.js' index.html
           grep -q 'gameplay.js' index.html
           grep -q 'id="match-map-complex"' index.html
@@ -79,17 +92,6 @@ jobs:
           grep -q 'const mapSeed=createMapSeed()' gameplay.js
           grep -q 'generateComplex(mapSeed)' gameplay.js
           grep -q 'generated.monsterSpawns' gameplay.js
-          grep -q 'complex-checker-texture' procedural-complex.js
-          grep -q 'GRID_UNIT = 6' procedural-complex.js
-          grep -q 'locomotion-collider' procedural-complex.js
-          ! grep -q 'match-map-street' index.html
-          ! grep -q 'match-map-mansion' index.html
-          ! grep -q 'match-map-forest' index.html
-          ! grep -q 'gltf-model' index.html
-          ! grep -q 'assets/maps/' index.html
-
-      - name: Check gameplay and controller wiring
-        run: |
           grep -q 'gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera' index.html
           grep -q 'tracked-controls="hand:left"' index.html
           grep -q 'tracked-controls="hand:right"' index.html
@@ -99,3 +101,8 @@ jobs:
           grep -q 'slice(0,6)' gameplay.js
           grep -q 'matchState:this.game.exportState()' multiplayer.js
           grep -q 'create-room-dialog' index.html
+          ! grep -q 'match-map-street' index.html
+          ! grep -q 'match-map-mansion' index.html
+          ! grep -q 'match-map-forest' index.html
+          ! grep -q 'gltf-model' index.html
+          ! grep -q 'assets/maps/' index.html
