@@ -15,69 +15,44 @@ A static A-Frame WebXR multiplayer survival prototype for Meta Quest Browser.
 
 ## Procedural Black Checkered Complex
 
-The host creates an eight-character map seed and sends it with the match-start state. Every participating client rebuilds the same layout locally, so the map does not need to be streamed through WebRTC.
+The host creates an eight-character seed and sends it with the match-start state. Every participating client rebuilds the same layout locally, so map geometry does not need to be streamed through WebRTC.
 
-The generator now has **24 modular pieces**.
+The generator now contains **36 modular pieces** across three batches.
 
-### First batch
+### Batch 1
 
-1. Spawn Hub
-2. Short Straight Hall
-3. Medium Straight Hall
-4. Long Straight Hall
-5. Corner Hall
-6. T Junction
-7. Four-Way Junction
-8. Small Empty Room
-9. Square Pillar Room
-10. Stepping Block Room
-11. Ramp Up
-12. Plain Wall Cap
+Spawn Hub, Short Straight Hall, Medium Straight Hall, Long Straight Hall, Corner Hall, T Junction, Four-Way Junction, Small Empty Room, Square Pillar Room, Stepping Block Room, Ramp Up, and Plain Wall Cap.
 
-### Second batch
+### Batch 2
 
-13. Offset S Hall
-14. Zigzag Hall
-15. Pillar Hall
-16. Windowed Hall
-17. Low Beam Hall
-18. Split-Level Hall
-19. Wide T Junction
-20. Offset Crossroads
-21. Fork Junction
-22. Double Hall Loop
-23. Ring Junction
-24. Broken Crossroads
+Offset S Hall, Zigzag Hall, Pillar Hall, Windowed Hall, Low Beam Hall, Split-Level Hall, Wide T Junction, Offset Crossroads, Fork Junction, Double Hall Loop, Ring Junction, and Broken Crossroads.
 
-The layout builder creates a mandatory main route, a guaranteed Ramp Up to the upper level, side branches, junctions, rooms, platforming spaces, loops, and sealed dead ends. It attempts to place every second-batch piece in each generated map before filling remaining space with weighted random modules.
+### Batch 3
+
+Long Chamber, Storage Block Room, Sunken Floor Room, Raised Ring Room, Twin Chamber, Divider Room, Observation Room, Column Forest Room, Edge-Light Room, Emergency Light Room, Checker Arena, and Collapsed Room.
+
+The third batch replaces suitable connector caps after the base layout is created. This expands dead ends into larger rooms without changing the shared multiplayer seed. Pieces that cannot fit safely remain capped rather than overlapping existing geometry.
+
+## Bright lighting system
+
+Every generated module now receives a visible emissive ceiling fixture. The map also receives stronger ambient and hemisphere fill lighting, so hallways and rooms remain readable even between real light sources.
+
+Actual point lights are concentrated in rooms, junctions, vertical transitions, and selected hallways. Large spaces can receive small accent lights. All real lights use short ranges and have shadows disabled to reduce the cost on Meta Quest.
+
+The map root exposes:
+
+- `data-lighting-mode="bright-everywhere"`
+- `data-point-light-count`
 
 ## Collision policy
 
-All current and future gameplay geometry follows one rule: **physical-looking map geometry is created through the collision-first renderer and automatically receives a locomotion collider**.
+All current and future physical-looking map geometry must be created through the collision-first renderer and automatically receive locomotion collision.
 
-This includes:
+This includes floors, upper floors, ceilings, walls, doorway lintels, dividers, pillars, window panels, low beams, storage blocks, arena platforms, collapsed debris, Ramp Up steps, connector caps, perimeter walls, and the backup escape ceiling.
 
-- floors and upper floors
-- ceilings and the backup escape ceiling
-- exterior and interior walls
-- doorway lintels
-- hallway dividers
-- pillars and windows
-- stepping blocks and raised platforms
-- low overhead beams
-- Ramp Up steps and shaft walls
-- connector caps
-- perimeter escape walls
+Text, light entities, and thin glowing trim are decorative. Everything the player should be able to push against or stand on is solid.
 
-Pure text and light entities are decorative and do not receive collision.
-
-The procedural map is created after the A-Frame scene begins loading, so relying only on normal component discovery left the Gorilla locomotion component with its old startup collider list. `complex-renderer.js` now maintains an explicit runtime collider registry. It installs collider data directly, replaces the locomotion component's collider list after every generation, retries registration while A-Frame initializes the new entities, and refreshes again when VR starts.
-
-The map root exposes these debugging values after generation:
-
-- `data-collider-count`
-- `data-active-collider-count`
-- `data-collision-ready`
+The generated map appears after A-Frame begins loading. `complex-renderer.js` and `complex-batch3-renderer.js` therefore maintain runtime collider registries, install collider data on generated entities, replace the locomotion component's collider list after generation, retry registration during initialization, and refresh it again when VR starts.
 
 ## Generation rules
 
@@ -89,11 +64,12 @@ The map root exposes these debugging values after generation:
 - footprint and level overlap rejection
 - 192-meter bounded generation area
 - unused connector capping or sealing
-- one dominant lighting kit per match
+- one dominant visual color kit per match
 - black-and-charcoal checkerboard surfaces
-- dynamic lights without real-time shadows
+- bright emissive fixtures throughout the complex
+- no real-time shadows
 
-The full planned 76-piece library and later dynamic modules are documented in `docs/PROCEDURAL_COMPLEX_PLAN.md`.
+The complete planned 76-piece library and future dynamic modules are documented in `docs/PROCEDURAL_COMPLEX_PLAN.md`.
 
 ## Locomotion source of truth
 
@@ -105,11 +81,9 @@ The movement file is copied directly from this pinned source:
 - Source Git blob SHA: `94974d406cc880f5741f3e15e94dca2ee923947b`
 - Destination: `gorilla-locomotion-web.js`
 
-The pinned locomotion file itself remains unchanged. The procedural renderer registers compatible `locomotion-collider` boxes around the generated geometry.
+The pinned movement file remains unchanged.
 
 ## GitHub Pages
-
-The site address is:
 
 `https://2ndsebastiantablet-hash.github.io/weird_vr/`
 
@@ -117,24 +91,22 @@ The site address is:
 
 1. Wait for GitHub Pages to redeploy.
 2. Completely close every older WEIRD VR Quest Browser tab.
-3. Reopen the site, create a room, and enter VR.
-4. Start a match from the controller menu.
-5. Push against the Spawn Hub walls, floor blocks, and ceiling.
-6. Test straight halls, corners, walls, doorway sides, and lintels.
-7. Push against the stepping blocks, pillars, window panels, dividers, beams, and raised platforms.
-8. Travel through the Ramp Up and test every step, side wall, upper doorway, and roof.
-9. Try launching above the map and confirm the module ceilings and backup escape ceiling stop the player.
-10. Start several matches and confirm the layout changes while collisions remain active.
-11. Test from a second headset and confirm both players receive the same seeded layout.
+3. Reopen the site, create a room, enter VR, and start a match.
+4. Confirm the Spawn Hub, hallways, and connector openings are brightly visible.
+5. Enter several large rooms and confirm their fixtures and local lights illuminate the floor and obstacles.
+6. Push against walls, ceilings, storage blocks, columns, observation panels, dividers, platforms, collapsed debris, and Ramp Up steps.
+7. Try launching above the complex and confirm the ceilings stop the player.
+8. Start several matches and confirm layout and visual kit changes do not create dark unplayable sections.
+9. Test with a second headset and confirm both players receive the same seeded layout.
 
 ## Important files
 
-- `index.html` — UI, waiting room, procedural map root, HUD, and script order
-- `complex-data.js` — all 24 module definitions and deterministic connector placement
-- `complex-renderer.js` — visible geometry, lighting, ceilings, runtime collider registration, and spawn summaries
+- `complex-data.js` — batches 1 and 2 plus the deterministic base layout
+- `complex-batch3.js` — batch 3 definitions and cap-replacement placement
+- `complex-renderer.js` — base geometry and runtime collision registration
+- `complex-batch3-renderer.js` — batch 3 interiors, bright universal lighting, and extension collision registration
 - `procedural-complex.js` — public generator API used by gameplay
 - `gameplay.js` — match timer, seed synchronization, late joining, and monster spawn selection
 - `gorilla-locomotion-web.js` — exact pinned locomotion source
 - `multiplayer.js` — room and pose synchronization
-- `docs/PROCEDURAL_COMPLEX_PLAN.md` — complete modular-map plan
-- `.github/workflows/validate.yml` — syntax, determinism, module, collision, and scene checks
+- `.github/workflows/validate.yml` — syntax, determinism, module, collision, lighting, and scene checks
