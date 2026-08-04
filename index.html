@@ -10,6 +10,7 @@
   <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <script defer src="config.js"></script>
   <script defer src="gorilla-locomotion-web.js"></script>
+  <script defer src="gameplay.js"></script>
   <script defer src="multiplayer.js"></script>
   <script defer src="app.js"></script>
 </head>
@@ -18,7 +19,7 @@
     <section id="main-panel" class="panel">
       <div class="eyebrow">WEBXR • P2P • QUEST BROWSER</div>
       <h1>WEIRD <span>VR</span></h1>
-      <p class="subtitle">A WebXR playground with Gorilla Tag-style hand locomotion and code-based multiplayer.</p>
+      <p class="subtitle">A multiplayer survival game with Gorilla Tag-style hand locomotion.</p>
 
       <label for="player-name">Player name</label>
       <input id="player-name" class="text-input" maxlength="18" value="Player" autocomplete="nickname">
@@ -54,8 +55,8 @@
         <button id="copy-room-code" class="button primary">Copy Code</button>
         <button id="leave-room" class="button danger">Leave Room</button>
       </div>
-      <p id="room-status" class="status" data-tone="ready">Room ready. Use the Enter VR button.</p>
-      <p class="note">The first player hosts the room. If the host leaves, the room closes.</p>
+      <p id="room-status" class="status" data-tone="ready">Room ready. Enter VR when ready.</p>
+      <p class="note">In VR, press a face button or either thumbstick button to open the game menu. Only the host can start a match.</p>
     </section>
   </main>
 
@@ -109,17 +110,70 @@
       <a-text id="world-room-status" value="SOLO" align="center" width="4" color="#9fb2ff" position="0 3.05 -16.62"></a-text>
     </a-entity>
 
+    <a-entity id="match-map-street" position="100 0 0" visible="false">
+      <a-entity gltf-model="url(assets/maps/street_city_buildings_8.glb)" position="1.383 .075 4.534"></a-entity>
+      <a-plane rotation="-90 0 0" width="42" height="42" visible="false" locomotion-collider="type:floor;size:42 0 42"></a-plane>
+      <a-box position="0 2 -21" width="42" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:42 4 .5"></a-box>
+      <a-box position="0 2 21" width="42" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:42 4 .5"></a-box>
+      <a-box position="-21 2 0" width=".5" height="4" depth="42" visible="false" locomotion-collider="type:box;size:.5 4 42"></a-box>
+      <a-box position="21 2 0" width=".5" height="4" depth="42" visible="false" locomotion-collider="type:box;size:.5 4 42"></a-box>
+    </a-entity>
+
+    <a-entity id="match-map-mansion" position="220 0 0" visible="false">
+      <a-entity gltf-model="url(assets/maps/mansion_furnished_quest.glb)" scale=".01 .01 .01" position="-4.924 .334 9.797"></a-entity>
+      <a-plane rotation="-90 0 0" width="42" height="42" visible="false" locomotion-collider="type:floor;size:42 0 42"></a-plane>
+      <a-box position="0 2 -21" width="42" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:42 4 .5"></a-box>
+      <a-box position="0 2 21" width="42" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:42 4 .5"></a-box>
+      <a-box position="-21 2 0" width=".5" height="4" depth="42" visible="false" locomotion-collider="type:box;size:.5 4 42"></a-box>
+      <a-box position="21 2 0" width=".5" height="4" depth="42" visible="false" locomotion-collider="type:box;size:.5 4 42"></a-box>
+    </a-entity>
+
+    <a-entity id="match-map-forest" position="340 0 0" visible="false">
+      <a-entity gltf-model="url(assets/maps/pine_forest.glb)" scale=".25 .25 .25" position="0 17.66 0"></a-entity>
+      <a-plane rotation="-90 0 0" width="48" height="48" visible="false" locomotion-collider="type:floor;size:48 0 48"></a-plane>
+      <a-box position="0 2 -24" width="48" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:48 4 .5"></a-box>
+      <a-box position="0 2 24" width="48" height="4" depth=".5" visible="false" locomotion-collider="type:box;size:48 4 .5"></a-box>
+      <a-box position="-24 2 0" width=".5" height="4" depth="48" visible="false" locomotion-collider="type:box;size:.5 4 48"></a-box>
+      <a-box position="24 2 0" width=".5" height="4" depth="48" visible="false" locomotion-collider="type:box;size:.5 4 48"></a-box>
+    </a-entity>
+
     <a-entity id="player-rig" position="0 0 8"
       gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera;playerHeightOffset:1.15">
-      <a-camera id="player-camera" position="0 0 0" wasd-controls-enabled="false"></a-camera>
+      <a-camera id="player-camera" position="0 0 0" wasd-controls-enabled="false">
+        <a-text id="match-map-text" visible="false" align="center" width="2.5" color="#d9dcff" position="0 .28 -1.2"></a-text>
+        <a-text id="match-timer-text" visible="false" align="center" width="3.4" color="#ffffff" position="0 .15 -1.2"></a-text>
+        <a-text id="waiting-message" visible="false" align="center" width="2.6" color="#ffe5a7" position="0 0 -1.2"></a-text>
 
-      <a-entity id="left-hand" position="-.35 -.35 -.4" tracked-controls="hand:left">
+        <a-entity id="vr-game-menu" visible="false" position="0 -.05 -1.25">
+          <a-plane width="1.35" height="1.15" color="#11152a" opacity=".96" material="shader:flat"></a-plane>
+          <a-text value="GAME MENU" align="center" width="2.2" color="#ffffff" position="0 .45 .01"></a-text>
+          <a-text id="vr-menu-role" value="NOT IN A ROOM" align="center" width="1.7" color="#9eabff" position="0 .29 .01"></a-text>
+          <a-text id="vr-menu-state" value="WAITING ROOM" align="center" width="1.55" color="#cfd4ed" position="0 .08 .01"></a-text>
+
+          <a-plane id="vr-start-match" class="vr-ui-button" width=".95" height=".2" color="#7656ff" position="0 -.2 .015"></a-plane>
+          <a-text id="vr-start-match-label" value="START MATCH" align="center" width="1.45" color="#ffffff" position="0 -.2 .025"></a-text>
+
+          <a-plane id="vr-close-menu" class="vr-ui-button" width=".45" height=".17" color="#343a55" position="-.25 -.43 .015"></a-plane>
+          <a-text value="CLOSE" align="center" width=".72" color="#ffffff" position="-.25 -.43 .025"></a-text>
+
+          <a-plane id="vr-leave-room" class="vr-ui-button" width=".45" height=".17" color="#9d3553" position=".25 -.43 .015"></a-plane>
+          <a-text value="LEAVE" align="center" width=".72" color="#ffffff" position=".25 -.43 .025"></a-text>
+        </a-entity>
+      </a-camera>
+
+      <a-entity id="left-hand" position="-.35 -.35 -.4"
+        tracked-controls="hand:left"
+        raycaster="objects:.vr-ui-button;far:4;showLine:false;lineColor:#f06b9d"
+        vr-menu-hand="hand:left">
         <a-entity id="left-hand-visual">
           <a-sphere id="left-hand-follower" radius=".12" color="#f06b9d" opacity=".95"></a-sphere>
         </a-entity>
       </a-entity>
 
-      <a-entity id="right-hand" position=".35 -.35 -.4" tracked-controls="hand:right">
+      <a-entity id="right-hand" position=".35 -.35 -.4"
+        tracked-controls="hand:right"
+        raycaster="objects:.vr-ui-button;far:4;showLine:false;lineColor:#62b5ff"
+        vr-menu-hand="hand:right">
         <a-entity id="right-hand-visual">
           <a-sphere id="right-hand-follower" radius=".12" color="#62b5ff" opacity=".95"></a-sphere>
         </a-entity>
