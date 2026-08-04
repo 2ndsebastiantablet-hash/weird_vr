@@ -6,34 +6,14 @@ const MATCH_START_DELAY_MS = 1400;
 const MENU_TOGGLE_BUTTONS = new Set([3,4,5]);
 
 const MAPS = Object.freeze({
-  street: {
-    id: "street",
-    name: "Neon Crossroads",
-    rootId: "match-map-street",
+  complex: {
+    id: "complex",
+    name: "Black Checkered Complex",
+    rootId: "match-map-complex",
     spawn: [100, 0, 8],
     monsterSpawns: [
-      [92,0,-8],[100,0,-10],[108,0,-5],[91,0,7],[109,0,9],[100,0,15],
-      [95,0,1],[105,0,2],[88,0,-1],[112,0,-1]
-    ]
-  },
-  mansion: {
-    id: "mansion",
-    name: "Blackwood Manor",
-    rootId: "match-map-mansion",
-    spawn: [220, 0, 8],
-    monsterSpawns: [
-      [212,0,-8],[220,0,-11],[228,0,-7],[211,0,5],[229,0,6],[220,0,14],
-      [215,0,0],[225,0,0],[208,0,-1],[232,0,-1]
-    ]
-  },
-  forest: {
-    id: "forest",
-    name: "Moonpine Forest",
-    rootId: "match-map-forest",
-    spawn: [340, 0, 14],
-    monsterSpawns: [
-      [326,0,-12],[340,0,-15],[354,0,-10],[324,0,7],[356,0,8],[340,0,18],
-      [331,0,0],[349,0,1],[322,0,-1],[358,0,-2]
+      [82,0,-18],[100,0,-20],[118,0,-16],[80,0,5],[120,0,7],[100,0,24],
+      [88,0,12],[112,0,14],[76,0,-2],[124,0,-4],[90,0,-28],[110,0,28]
     ]
   }
 });
@@ -50,6 +30,12 @@ function shuffled(values){
     [copy[i],copy[j]]=[copy[j],copy[i]];
   }
   return copy;
+}
+
+function createMapSeed(){
+  const random = new Uint32Array(1);
+  crypto.getRandomValues(random);
+  return random[0].toString(16).padStart(8,"0");
 }
 
 function formatTime(ms){
@@ -109,7 +95,7 @@ class WeirdVRGameLoop{
   }
 
   emptyState(){
-    return {active:false,mapId:"",startAt:0,endAt:0,participantIds:[],monsterIds:[],monsterSpawns:[]};
+    return {active:false,mapId:"",mapSeed:"",startAt:0,endAt:0,participantIds:[],monsterIds:[],monsterSpawns:[]};
   }
 
   start(){
@@ -164,9 +150,7 @@ class WeirdVRGameLoop{
 
   hostStartMatch(){
     if(!this.network.isHost||!this.network.roomCode||this.state.active)return;
-    const mapIds=Object.keys(MAPS);
-    const random=new Uint32Array(1);crypto.getRandomValues(random);
-    const mapId=mapIds[random[0]%mapIds.length];
+    const mapId="complex";
     const participants=this.network.currentParticipantIds();
     const monsterPool=Array.isArray(window.WEIRD_VR_MONSTER_POOL)?window.WEIRD_VR_MONSTER_POOL:[];
     const monsters=shuffled(monsterPool).slice(0,6).map(item=>typeof item==="string"?item:item.id).filter(Boolean);
@@ -175,6 +159,7 @@ class WeirdVRGameLoop{
     const state={
       active:true,
       mapId,
+      mapSeed:createMapSeed(),
       startAt,
       endAt:startAt+MATCH_DURATION_MS,
       participantIds:participants,
@@ -208,6 +193,7 @@ class WeirdVRGameLoop{
     this.state={
       active:true,
       mapId:map.id,
+      mapSeed:String(raw.mapSeed||"00000000"),
       startAt:Number(raw.startAt)||Date.now(),
       endAt:Number(raw.endAt)||Date.now()+MATCH_DURATION_MS,
       participantIds:participants,
@@ -216,6 +202,9 @@ class WeirdVRGameLoop{
     };
     this.localParticipant=participants.includes(this.network.peerId);
     if(this.localParticipant){
+      if(window.WEIRD_VR_COMPLEX&&typeof window.WEIRD_VR_COMPLEX.generate==="function"){
+        window.WEIRD_VR_COMPLEX.generate(this.state.mapSeed);
+      }
       this.showMap(map.id);
       this.teleport(map.spawn);
       this.waitingText.setAttribute("visible",false);
