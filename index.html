@@ -10,7 +10,7 @@
   <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
   <script defer src="config.js"></script>
   <script defer src="gorilla-locomotion-web.js"></script>
-  <script defer src="map-loader.js"></script>
+  <script defer src="procedural-complex.js"></script>
   <script defer src="gameplay.js"></script>
   <script defer src="multiplayer.js"></script>
   <script defer src="app.js"></script>
@@ -111,10 +111,8 @@
       <a-text id="world-room-status" value="SOLO" align="center" width="4" color="#9fb2ff" position="0 3.05 -16.62"></a-text>
     </a-entity>
 
-    <!-- These roots are populated by map-loader.js before A-Frame initializes the scene. -->
-    <a-entity id="match-map-street" position="100 0 0" visible="false"></a-entity>
-    <a-entity id="match-map-mansion" position="220 0 0" visible="false"></a-entity>
-    <a-entity id="match-map-forest" position="340 0 0" visible="false"></a-entity>
+    <!-- The modular generator owns this single match-map root. -->
+    <a-entity id="match-map-complex" position="100 0 0" visible="false"></a-entity>
 
     <a-entity id="player-rig" position="0 0 8"
       gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera;playerHeightOffset:1.15">
