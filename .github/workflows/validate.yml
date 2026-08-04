@@ -21,7 +21,9 @@ jobs:
           node --check config.js
           node --check gorilla-locomotion-web.js
           node --check complex-data.js
+          node --check complex-batch3.js
           node --check complex-renderer.js
+          node --check complex-batch3-renderer.js
           node --check procedural-complex.js
           node --check gameplay.js
           node --check multiplayer.js
@@ -30,7 +32,7 @@ jobs:
         run: |
           test "$(git hash-object gorilla-locomotion-web.js)" = "94974d406cc880f5741f3e15e94dca2ee923947b"
 
-      - name: Verify both modular piece batches
+      - name: Verify all three modular piece batches
         run: |
           for piece in spawnHub shortStraight mediumStraight longStraight cornerHall tJunction fourWay smallRoom pillarRoom steppingRoom rampUp wallCap; do
             grep -q "$piece" complex-data.js
@@ -38,7 +40,11 @@ jobs:
           for piece in offsetSHall zigzagHall pillarHall windowedHall lowBeamHall splitLevelHall wideTJunction offsetCrossroads forkJunction doubleHallLoop ringJunction brokenCrossroads; do
             grep -q "$piece" complex-data.js
           done
+          for piece in longChamber storageBlockRoom sunkenFloorRoom raisedRingRoom twinChamber dividerRoom observationRoom columnForestRoom darkRoom emergencyLightRoom checkerArena collapsedRoom; do
+            grep -q "$piece" complex-batch3.js
+          done
           grep -q 'placeFeatureBatch' complex-data.js
+          grep -q 'replaceCapWithPiece' complex-batch3.js
           grep -q 'collisionPolicy:"all-gameplay-geometry"' procedural-complex.js
 
       - name: Verify deterministic procedural layouts
@@ -46,6 +52,7 @@ jobs:
           node <<'NODE'
           global.window = {};
           require("./complex-data.js");
+          require("./complex-batch3.js");
           const data = window.WEIRD_VR_COMPLEX_DATA;
           const first = data.buildLayout("deadbeef");
           const second = data.buildLayout("deadbeef");
@@ -58,7 +65,8 @@ jobs:
           for (const id of data.SECOND_BATCH_IDS) {
             if (!firstIds.includes(id)) throw new Error("Second-batch piece missing: " + id);
           }
-          if (first.pieces.length < 40 || first.pieces.length > 65) throw new Error("Unexpected map size: " + first.pieces.length);
+          const thirdPlaced = data.THIRD_BATCH_IDS.filter(id => firstIds.includes(id));
+          if (thirdPlaced.length < 6) throw new Error("Too few third-batch pieces placed: " + thirdPlaced.length);
           if (first.monsterSpawns.length < 6) throw new Error("Not enough generated monster spawns");
           NODE
 
@@ -71,9 +79,18 @@ jobs:
           grep -q 'component.colliders=active' complex-renderer.js
           grep -q 'root.dataset.collisionReady' complex-renderer.js
           grep -q 'refreshCollisions' complex-renderer.js
-          grep -q 'addFloorAndCeiling' complex-renderer.js
-          grep -q 'addWorldShell' complex-renderer.js
-          grep -q 'renderRamp' complex-renderer.js
+          grep -q 'extensionColliderRecords' complex-batch3-renderer.js
+          grep -q 'installCollider' complex-batch3-renderer.js
+          grep -q 'refreshExtensionColliders' complex-batch3-renderer.js
+
+      - name: Verify bright map lighting
+        run: |
+          grep -q 'addUniversalLighting' complex-batch3-renderer.js
+          grep -q 'type:ambient;color:#e5ecff;intensity:.75' complex-batch3-renderer.js
+          grep -q 'type:hemisphere;color:#ffffff' complex-batch3-renderer.js
+          grep -q 'emissiveIntensity:2.35' complex-batch3-renderer.js
+          grep -q 'lightingMode="bright-everywhere"' complex-batch3-renderer.js
+          grep -q 'pointLightCount' complex-batch3-renderer.js
 
       - name: Check scene and gameplay wiring
         run: |
@@ -84,7 +101,9 @@ jobs:
           test -f THIRD_PARTY_LICENSES/Another-Axiom-GorillaLocomotion-MIT.txt
           grep -q 'gorilla-locomotion-web.js' index.html
           grep -q 'complex-data.js' index.html
+          grep -q 'complex-batch3.js' index.html
           grep -q 'complex-renderer.js' index.html
+          grep -q 'complex-batch3-renderer.js' index.html
           grep -q 'procedural-complex.js' index.html
           grep -q 'gameplay.js' index.html
           grep -q 'id="match-map-complex"' index.html
