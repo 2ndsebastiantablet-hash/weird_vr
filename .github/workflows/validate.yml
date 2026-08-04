@@ -20,12 +20,22 @@ jobs:
           node --check app.js
           node --check config.js
           node --check gorilla-locomotion-web.js
+          node --check map-loader.js
           node --check gameplay.js
           node --check multiplayer.js
 
       - name: Verify pinned locomotion source
         run: |
           test "$(git hash-object gorilla-locomotion-web.js)" = "94974d406cc880f5741f3e15e94dca2ee923947b"
+
+      - name: Verify uploaded GLB maps
+        run: |
+          test -s assets/maps/street_city_buildings_8.glb
+          test -s assets/maps/mansion_furnished_quest.glb
+          test -s assets/maps/pine_forest.glb
+          test "$(head -c 4 assets/maps/street_city_buildings_8.glb)" = "glTF"
+          test "$(head -c 4 assets/maps/mansion_furnished_quest.glb)" = "glTF"
+          test "$(head -c 4 assets/maps/pine_forest.glb)" = "glTF"
 
       - name: Check required static files and scene wiring
         run: |
@@ -34,7 +44,14 @@ jobs:
           test -f README.md
           test -f THIRD_PARTY_LICENSES/Another-Axiom-GorillaLocomotion-MIT.txt
           grep -q 'gorilla-locomotion-web.js' index.html
+          grep -q 'map-loader.js' index.html
           grep -q 'gameplay.js' index.html
+          grep -q 'assets/maps/street_city_buildings_8.glb' index.html
+          grep -q 'assets/maps/mansion_furnished_quest.glb' index.html
+          grep -q 'assets/maps/pine_forest.glb' index.html
+          grep -q 'quest-map-model="fallback:#street-fallback' index.html
+          grep -q 'quest-map-model="fallback:#mansion-fallback' index.html
+          grep -q 'quest-map-model="fallback:#forest-fallback' index.html
           grep -q 'gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera' index.html
           grep -q 'tracked-controls="hand:left"' index.html
           grep -q 'tracked-controls="hand:right"' index.html
