@@ -20,6 +20,7 @@ jobs:
           node --check app.js
           node --check config.js
           node --check gorilla-locomotion-web.js
+          node --check gameplay.js
           node --check multiplayer.js
 
       - name: Verify pinned locomotion source
@@ -33,12 +34,18 @@ jobs:
           test -f README.md
           test -f THIRD_PARTY_LICENSES/Another-Axiom-GorillaLocomotion-MIT.txt
           grep -q 'gorilla-locomotion-web.js' index.html
+          grep -q 'gameplay.js' index.html
           grep -q 'gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera' index.html
           grep -q 'tracked-controls="hand:left"' index.html
           grep -q 'tracked-controls="hand:right"' index.html
-          grep -q 'id="left-hand-visual"' index.html
-          grep -q 'id="right-hand-visual"' index.html
+          grep -q 'id="vr-game-menu"' index.html
+          grep -q 'id="vr-start-match"' index.html
+          grep -q 'match-map-street' index.html
+          grep -q 'match-map-mansion' index.html
+          grep -q 'match-map-forest' index.html
+          grep -q 'MATCH_DURATION_MS = 4 \* 60 \* 1000' gameplay.js
+          grep -q 'slice(0,6)' gameplay.js
+          grep -q 'matchState:this.game.exportState()' multiplayer.js
           grep -q 'locomotion-collider="type:floor' index.html
           grep -q 'locomotion-collider="type:box' index.html
-          grep -q 'multiplayer.js' index.html
           grep -q 'create-room-dialog' index.html
