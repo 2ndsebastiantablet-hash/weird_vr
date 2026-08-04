@@ -1,0 +1,31 @@
+name: Validate WebXR project
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check config.js
+          node --check gorilla-locomotion-web.js
+          node --check multiplayer.js
+      - name: Check required static files
+        run: |
+          test -f index.html
+          test -f styles.css
+          test -f README.md
+          test -f THIRD_PARTY_LICENSES/Another-Axiom-GorillaLocomotion-MIT.txt
+          grep -q 'gorilla-locomotion-web.js' index.html
+          grep -q 'multiplayer.js' index.html
+          grep -q 'create-room-dialog' index.html
