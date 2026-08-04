@@ -14,18 +14,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Check JavaScript syntax
         run: |
           node --check app.js
           node --check config.js
           node --check gorilla-locomotion-web.js
           node --check multiplayer.js
-      - name: Check required static files
+
+      - name: Verify pinned locomotion source
+        run: |
+          test "$(git hash-object gorilla-locomotion-web.js)" = "94974d406cc880f5741f3e15e94dca2ee923947b"
+
+      - name: Check required static files and scene wiring
         run: |
           test -f index.html
           test -f styles.css
           test -f README.md
           test -f THIRD_PARTY_LICENSES/Another-Axiom-GorillaLocomotion-MIT.txt
           grep -q 'gorilla-locomotion-web.js' index.html
+          grep -q 'gorilla-locomotion="leftHand:#left-hand;rightHand:#right-hand;head:#player-camera' index.html
+          grep -q 'tracked-controls="hand:left"' index.html
+          grep -q 'tracked-controls="hand:right"' index.html
+          grep -q 'id="left-hand-visual"' index.html
+          grep -q 'id="right-hand-visual"' index.html
+          grep -q 'locomotion-collider="type:floor' index.html
+          grep -q 'locomotion-collider="type:box' index.html
           grep -q 'multiplayer.js' index.html
           grep -q 'create-room-dialog' index.html
