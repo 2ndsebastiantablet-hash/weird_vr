@@ -8,7 +8,7 @@ const MENU_TOGGLE_BUTTONS = new Set([3,4,5]);
 const MAPS = Object.freeze({
   street: {
     id: "street",
-    name: "Street City",
+    name: "Neon Crossroads",
     rootId: "match-map-street",
     spawn: [100, 0, 8],
     monsterSpawns: [
@@ -18,7 +18,7 @@ const MAPS = Object.freeze({
   },
   mansion: {
     id: "mansion",
-    name: "Furnished Mansion",
+    name: "Blackwood Manor",
     rootId: "match-map-mansion",
     spawn: [220, 0, 8],
     monsterSpawns: [
@@ -28,9 +28,9 @@ const MAPS = Object.freeze({
   },
   forest: {
     id: "forest",
-    name: "Pine Forest",
+    name: "Moonpine Forest",
     rootId: "match-map-forest",
-    spawn: [340, 0, 8],
+    spawn: [340, 0, 14],
     monsterSpawns: [
       [326,0,-12],[340,0,-15],[354,0,-10],[324,0,7],[356,0,8],[340,0,18],
       [331,0,0],[349,0,1],[322,0,-1],[358,0,-2]
