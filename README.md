@@ -2,86 +2,77 @@
 
 A static A-Frame WebXR multiplayer survival prototype for Meta Quest Browser.
 
-## Features
+## Current features
 
 - Gorilla Tag-style hand locomotion
-- PeerJS/WebRTC multiplayer for up to eight players
-- public and private room codes
+- public and private PeerJS/WebRTC rooms for up to eight players
 - host-controlled four-minute matches
-- late joiners wait in the lobby until the next match
-- one deterministic procedural Black Checkered Complex per match
-- generated navigation points and future monster spawn positions
-- no package manager, bundler, or build step
+- late joiners remain in the waiting room until the next round
+- one authored stylized forest survival map
+- six future-monster selections and fixed monster spawn locations
+- no package manager, bundler, downloaded map model, or build process
 
-## Procedural Black Checkered Complex
+## Evergreen Outpost
 
-The host creates an eight-character seed and sends it with the match-start state. Every participating client rebuilds the same layout locally, so map geometry does not need to be streamed through WebRTC.
+The active match map is **Evergreen Outpost**, a bright low-poly forest inspired by the clean, chunky readability of Compound VR. The previous procedural Black Checkered Complex and all of its module files were removed.
 
-The generator now contains **36 modular pieces** across three batches.
+The forest is constructed from A-Frame shapes only when the first match begins. It is kept in memory for later matches, preventing the menu and waiting room from being delayed by map construction.
 
-### Batch 1
+### Landmarks
 
-Spawn Hub, Short Straight Hall, Medium Straight Hall, Long Straight Hall, Corner Hall, T Junction, Four-Way Junction, Small Empty Room, Square Pillar Room, Stepping Block Room, Ramp Up, and Plain Wall Cap.
+- central spawn clearing
+- Ranger Cabin
+- Supply Shed
+- creek and wooden bridge
+- campfire clearing
+- climbable lookout platform
+- rock ridge and overlook
+- ruined stone structure
+- stump platforming course
+- dense outer forest and scattered boulders
 
-### Batch 2
+### Sky and lighting
 
-Offset S Hall, Zigzag Hall, Pillar Hall, Windowed Hall, Low Beam Hall, Split-Level Hall, Wide T Junction, Offset Crossroads, Fork Junction, Double Hall Loop, Ring Junction, and Broken Crossroads.
+The map contains a large blue sky dome, a stylized sun, bright clouds, distant low-poly mountains, strong ambient and hemisphere fill light, directional sunlight, and a few local landmark lights. Real-time shadows remain disabled for Quest performance.
 
-### Batch 3
+### Collision policy
 
-Long Chamber, Storage Block Room, Sunken Floor Room, Raised Ring Room, Twin Chamber, Divider Room, Observation Room, Column Forest Room, Edge-Light Room, Emergency Light Room, Checker Arena, and Collapsed Room.
+Every object that should stop, support, or launch the player receives locomotion collision:
 
-The third batch replaces suitable connector caps after the base layout is created. This expands dead ends into larger rooms without changing the shared multiplayer seed. Pieces that cannot fit safely remain capped rather than overlapping existing geometry.
+- ground
+- tree trunks
+- rocks and ridge blocks
+- cabin floors, walls, roofs, and porches
+- bridge planks and rails
+- camp logs and firepit base
+- lookout supports, platform, railings, and steps
+- ruins
+- stump platforms
+- invisible perimeter walls
 
-## Bright lighting system
+Foliage, clouds, sun, distant mountains, water coloring, paths, text, and light entities are decorative and non-solid.
 
-Every generated module now receives a visible emissive ceiling fixture. The map also receives stronger ambient and hemisphere fill lighting, so hallways and rooms remain readable even between real light sources.
+`forest-map.js` keeps an explicit runtime collider registry and refreshes the pinned Gorilla locomotion component after the forest is created and whenever VR starts.
 
-Actual point lights are concentrated in rooms, junctions, vertical transitions, and selected hallways. Large spaces can receive small accent lights. All real lights use short ranges and have shadows disabled to reduce the cost on Meta Quest.
+## Match behavior
 
-The map root exposes:
-
-- `data-lighting-mode="bright-everywhere"`
-- `data-point-light-count`
-
-## Collision policy
-
-All current and future physical-looking map geometry must be created through the collision-first renderer and automatically receive locomotion collision.
-
-This includes floors, upper floors, ceilings, walls, doorway lintels, dividers, pillars, window panels, low beams, storage blocks, arena platforms, collapsed debris, Ramp Up steps, connector caps, perimeter walls, and the backup escape ceiling.
-
-Text, light entities, and thin glowing trim are decorative. Everything the player should be able to push against or stand on is solid.
-
-The generated map appears after A-Frame begins loading. `complex-renderer.js` and `complex-batch3-renderer.js` therefore maintain runtime collider registries, install collider data on generated entities, replace the locomotion component's collider list after generation, retry registration during initialization, and refresh it again when VR starts.
-
-## Generation rules
-
-- 6-meter construction grid
-- ground and upper levels
-- 90-degree module rotation
-- compatible connector alignment
-- deterministic seeded selection
-- footprint and level overlap rejection
-- 192-meter bounded generation area
-- unused connector capping or sealing
-- one dominant visual color kit per match
-- black-and-charcoal checkerboard surfaces
-- bright emissive fixtures throughout the complex
-- no real-time shadows
-
-The complete planned 76-piece library and future dynamic modules are documented in `docs/PROCEDURAL_COMPLEX_PLAN.md`.
+1. Players begin in the waiting room.
+2. The host opens the controller menu and starts a match.
+3. Current room members enter Evergreen Outpost at the same clearing.
+4. Six entries are reserved from the future monster pool and assigned forest spawn points.
+5. The match lasts four minutes.
+6. Everyone returns to the waiting room when time expires.
+7. Players joining during a match wait in the waiting room.
 
 ## Locomotion source of truth
 
-The movement file is copied directly from this pinned source:
+The movement file remains copied byte-for-byte from:
 
-- Repository: `2ndsebastiantablet-hash/feeble`
-- Commit: `28a426aa6ade789320e2202cfa8d2fe61b46b539`
-- Source: `templates/gorilla-tag-locomotion/gorilla-locomotion.js`
-- Source Git blob SHA: `94974d406cc880f5741f3e15e94dca2ee923947b`
-- Destination: `gorilla-locomotion-web.js`
-
-The pinned movement file remains unchanged.
+- repository: `2ndsebastiantablet-hash/feeble`
+- commit: `28a426aa6ade789320e2202cfa8d2fe61b46b539`
+- source: `templates/gorilla-tag-locomotion/gorilla-locomotion.js`
+- source Git blob SHA: `94974d406cc880f5741f3e15e94dca2ee923947b`
+- destination: `gorilla-locomotion-web.js`
 
 ## GitHub Pages
 
@@ -91,22 +82,20 @@ The pinned movement file remains unchanged.
 
 1. Wait for GitHub Pages to redeploy.
 2. Completely close every older WEIRD VR Quest Browser tab.
-3. Reopen the site, create a room, enter VR, and start a match.
-4. Confirm the Spawn Hub, hallways, and connector openings are brightly visible.
-5. Enter several large rooms and confirm their fixtures and local lights illuminate the floor and obstacles.
-6. Push against walls, ceilings, storage blocks, columns, observation panels, dividers, platforms, collapsed debris, and Ramp Up steps.
-7. Try launching above the complex and confirm the ceilings stop the player.
-8. Start several matches and confirm layout and visual kit changes do not create dark unplayable sections.
-9. Test with a second headset and confirm both players receive the same seeded layout.
+3. Reopen the site and confirm multiplayer reaches the ready state.
+4. Create a room, enter VR, and start a match.
+5. Confirm the forest, blue sky, sun, clouds, mountains, cabins, creek, bridge, camp, lookout, ridge, ruins, and stump course appear.
+6. Push against the ground, tree trunks, rocks, cabin pieces, bridge, lookout, ruins, and stumps.
+7. Try to leave the forest and confirm the invisible perimeter walls stop the player.
+8. Allow the timer to end and confirm all players return to the waiting room.
+9. Join during an active round and confirm the new player remains in the waiting room.
 
 ## Important files
 
-- `complex-data.js` — batches 1 and 2 plus the deterministic base layout
-- `complex-batch3.js` — batch 3 definitions and cap-replacement placement
-- `complex-renderer.js` — base geometry and runtime collision registration
-- `complex-batch3-renderer.js` — batch 3 interiors, bright universal lighting, and extension collision registration
-- `procedural-complex.js` — public generator API used by gameplay
-- `gameplay.js` — match timer, seed synchronization, late joining, and monster spawn selection
-- `gorilla-locomotion-web.js` — exact pinned locomotion source
+- `index.html` — menus, waiting room, forest root, HUD, and controller hierarchy
+- `forest-map.js` — authored forest geometry, sky, lighting, landmarks, spawn data, and runtime collisions
+- `gameplay.js` — match timer, host start, late joining, forest switching, and future monster selection
+- `gorilla-locomotion-web.js` — exact pinned movement source
 - `multiplayer.js` — room and pose synchronization
-- `.github/workflows/validate.yml` — syntax, determinism, module, collision, lighting, and scene checks
+- `app.js` — reliable Quest startup and visible startup errors
+- `.github/workflows/validate.yml` — syntax, source integrity, forest, collision, lighting, and scene checks
